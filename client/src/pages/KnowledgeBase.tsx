@@ -143,12 +143,12 @@ export default function KnowledgeBase() {
 
   const handleAddSolution = () => {
     if (!newSolution.title || !newSolution.content) return;
-    
+
     addSolutionMutation.mutate({
       title: newSolution.title,
       content: newSolution.content,
       tags: newSolution.tags.split(",").map(tag => tag.trim()),
-      systemId: parseInt(newSolution.systemId) || null,
+      systemId: newSolution.systemId === "none" ? null : parseInt(newSolution.systemId) || null,
       status: "active",
     });
   };
