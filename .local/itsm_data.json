@@ -1,6 +1,46 @@
 {
-  "users": [],
-  "usersByEmail": [],
+  "users": [
+    [
+      "user_1756033475064_ggkcov1dp",
+      {
+        "id": "user_1756033475064_ggkcov1dp",
+        "email": "sivamariappan1502@gmail.com",
+        "password": "$2b$12$3y4YOWHlgH235U5dfDcD/.k2rPasDezi9bwLQKg/HrFFSE/ov6YP2",
+        "firstName": "Siva",
+        "lastName": "M",
+        "profileImageUrl": null,
+        "role": "user",
+        "emailVerified": false,
+        "passwordResetToken": null,
+        "passwordResetExpires": null,
+        "lastLoginAt": "2025-08-24T11:04:48.601Z",
+        "authProvider": "email",
+        "createdAt": "2025-08-24T11:04:35.064Z",
+        "updatedAt": "2025-08-24T11:04:48.601Z"
+      }
+    ]
+  ],
+  "usersByEmail": [
+    [
+      "sivamariappan1502@gmail.com",
+      {
+        "id": "user_1756033475064_ggkcov1dp",
+        "email": "sivamariappan1502@gmail.com",
+        "password": "$2b$12$3y4YOWHlgH235U5dfDcD/.k2rPasDezi9bwLQKg/HrFFSE/ov6YP2",
+        "firstName": "Siva",
+        "lastName": "M",
+        "profileImageUrl": null,
+        "role": "user",
+        "emailVerified": false,
+        "passwordResetToken": null,
+        "passwordResetExpires": null,
+        "lastLoginAt": "2025-08-24T11:04:48.601Z",
+        "authProvider": "email",
+        "createdAt": "2025-08-24T11:04:35.064Z",
+        "updatedAt": "2025-08-24T11:04:48.601Z"
+      }
+    ]
+  ],
   "systems": [
     {
       "id": 1,
