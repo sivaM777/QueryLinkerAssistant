@@ -63,7 +63,7 @@ export default function KnowledgeBase() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/solutions"] });
       setShowAddDialog(false);
-      setNewSolution({ title: "", content: "", tags: "", systemId: "" });
+      setNewSolution({ title: "", content: "", tags: "", systemId: "none" });
     },
     onError: (error) => {
       toast({
