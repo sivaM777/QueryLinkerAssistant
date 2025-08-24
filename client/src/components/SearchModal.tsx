@@ -130,6 +130,12 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                     className="p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                    onClick={() => {
+                      if (result.url) {
+                        window.open(result.url, '_blank');
+                      }
+                      onClose();
+                    }}
                     data-testid={`search-result-${index}`}
                   >
                     <div className="flex items-start justify-between">

@@ -7,7 +7,11 @@ import { Bell, Moon, Sun, Search } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useQuery } from "@tanstack/react-query";
 
-export default function Header() {
+interface HeaderProps {
+  onSearchOpen?: () => void;
+}
+
+export default function Header({ onSearchOpen }: HeaderProps = {}) {
   const { isDark, setTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -21,16 +25,17 @@ export default function Header() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      // TODO: Implement search functionality
-      console.log("Searching for:", searchQuery);
+    if (onSearchOpen) {
+      onSearchOpen();
     }
   };
 
   const handleKeyboardShortcut = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "k") {
       e.preventDefault();
-      // TODO: Open search modal
+      if (onSearchOpen) {
+        onSearchOpen();
+      }
     }
   };
 
@@ -70,6 +75,10 @@ export default function Header() {
               variant="ghost"
               size="sm"
               className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+              onClick={() => {
+                // TODO: Open notifications panel/modal
+                alert("Notifications feature coming soon!");
+              }}
               data-testid="notifications-button"
             >
               <Bell className="h-5 w-5" />

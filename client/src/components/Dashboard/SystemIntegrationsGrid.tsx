@@ -8,10 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Settings, Trash2, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function SystemIntegrationsGrid() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const { data: systems, isLoading } = useQuery({
     queryKey: ["/api/systems"],
@@ -32,6 +34,26 @@ export default function SystemIntegrationsGrid() {
       toast({
         title: "Sync Failed",
         description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (systemId: number) => {
+      await apiRequest("DELETE", `/api/systems/${systemId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "System Removed",
+        description: "System integration has been removed",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/systems"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to remove system integration",
         variant: "destructive",
       });
     },
@@ -111,7 +133,12 @@ export default function SystemIntegrationsGrid() {
               Connected systems and their status
             </p>
           </div>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setLocation("/integrations?action=add")}
+            data-testid="add-system-button"
+          >
             + Add System
           </Button>
         </div>
@@ -190,6 +217,7 @@ export default function SystemIntegrationsGrid() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => setLocation(`/integrations/${system.type}/settings`)}
                       data-testid={`settings-button-${system.type}`}
                     >
                       <Settings className="h-4 w-4" />
@@ -198,6 +226,12 @@ export default function SystemIntegrationsGrid() {
                       variant="ghost"
                       size="sm"
                       className="text-red-600 hover:text-red-700"
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to remove ${system.name}?`)) {
+                          deleteMutation.mutate(index + 1);
+                        }
+                      }}
+                      disabled={deleteMutation.isPending}
                       data-testid={`delete-button-${system.type}`}
                     >
                       <Trash2 className="h-4 w-4" />

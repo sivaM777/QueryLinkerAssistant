@@ -10,6 +10,7 @@ import {
   CheckCircle 
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 interface MetricsData {
   totalSolutions: number;
@@ -30,6 +31,8 @@ interface MetricsCardsProps {
 }
 
 export default function MetricsCards({ metrics, isLoading }: MetricsCardsProps) {
+  const [, setLocation] = useLocation();
+
   const cards = [
     {
       title: "Total Solutions",
@@ -38,6 +41,7 @@ export default function MetricsCards({ metrics, isLoading }: MetricsCardsProps) 
       changeType: "positive" as const,
       icon: Database,
       color: "blue",
+      href: "/knowledge",
     },
     {
       title: "Active Incidents",
@@ -46,6 +50,7 @@ export default function MetricsCards({ metrics, isLoading }: MetricsCardsProps) 
       changeType: (metrics?.criticalIncidents || 0) > 0 ? "warning" as const : "info" as const,
       icon: AlertTriangle,
       color: (metrics?.criticalIncidents || 0) > 0 ? "red" as "red" : "green",
+      href: "/incidents",
     },
     {
       title: "Data Sources",
@@ -54,6 +59,7 @@ export default function MetricsCards({ metrics, isLoading }: MetricsCardsProps) 
       changeType: "positive" as const,
       icon: Database,
       color: "blue",
+      href: "/integrations",
     },
     {
       title: "Avg. Resolution Time",
@@ -62,6 +68,7 @@ export default function MetricsCards({ metrics, isLoading }: MetricsCardsProps) 
       changeType: "info" as const,
       icon: Clock,
       color: "purple",
+      href: "/sla",
     },
   ];
 
@@ -120,6 +127,7 @@ export default function MetricsCards({ metrics, isLoading }: MetricsCardsProps) 
           >
             <Card 
               className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1 cursor-pointer"
+              onClick={() => setLocation(card.href)}
               data-testid={`metric-card-${card.title.toLowerCase().replace(/\s+/g, '-')}`}
             >
               <CardContent className="p-6">

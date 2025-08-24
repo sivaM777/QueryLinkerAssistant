@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, ExternalLink, Clock, Info } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 interface Incident {
   id: number;
@@ -22,6 +23,7 @@ interface Incident {
 }
 
 export default function ActiveIncidents() {
+  const [, setLocation] = useLocation();
   const { data: incidents, isLoading } = useQuery({
     queryKey: ["/api/incidents/active"],
     refetchInterval: 30000, // Refresh every 30 seconds
@@ -130,7 +132,12 @@ export default function ActiveIncidents() {
               }
             </p>
           </div>
-          <Button variant="ghost" size="sm" data-testid="view-all-incidents">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation("/incidents")}
+            data-testid="view-all-incidents"
+          >
             View All
           </Button>
         </div>
@@ -221,7 +228,11 @@ export default function ActiveIncidents() {
             
             {activeIncidents.length > 5 && (
               <div className="text-center pt-4 border-t border-gray-200 dark:border-slate-700">
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setLocation("/incidents")}
+                >
                   View {activeIncidents.length - 5} more incidents
                 </Button>
               </div>

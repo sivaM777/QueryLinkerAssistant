@@ -5,7 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Brain, Flame, Shield, Network, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function RecentSearches() {
+interface RecentSearchesProps {
+  onSearchOpen?: (query: string) => void;
+}
+
+export default function RecentSearches({ onSearchOpen }: RecentSearchesProps) {
   const { data: recentSearches, isLoading } = useQuery({
     queryKey: ["/api/search/recent"],
   });
@@ -92,6 +96,7 @@ export default function RecentSearches() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
               className="flex items-center space-x-4 p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer group"
+              onClick={() => onSearchOpen?.(search.query)}
               data-testid={`search-item-${index}`}
             >
               <div className={`w-10 h-10 bg-gradient-to-br ${search.gradient || 'from-primary to-purple-600'} rounded-xl flex items-center justify-center flex-shrink-0`}>

@@ -6,8 +6,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { User, RefreshCw, AlertTriangle, Brain } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function RecentActivity() {
+  const [, setLocation] = useLocation();
   const { data: activity, isLoading } = useQuery({
     queryKey: ["/api/dashboard/activity"],
   });
@@ -99,7 +101,12 @@ export default function RecentActivity() {
               Latest system updates and user interactions
             </p>
           </div>
-          <Button variant="ghost" size="sm" data-testid="view-all-activity">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation("/activity")}
+            data-testid="view-all-activity"
+          >
             View All
           </Button>
         </div>

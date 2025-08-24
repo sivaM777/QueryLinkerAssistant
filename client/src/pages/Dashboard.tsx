@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -10,10 +10,12 @@ import SLAStatus from "@/components/Dashboard/SLAStatus";
 import QuickActions from "@/components/Dashboard/QuickActions";
 import RecentActivity from "@/components/Dashboard/RecentActivity";
 import ActiveIncidents from "@/components/Dashboard/ActiveIncidents";
+import SearchModal from "@/components/SearchModal";
 
 export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // WebSocket for real-time updates
   useWebSocket((message) => {
@@ -68,7 +70,10 @@ export default function Dashboard() {
       <SystemIntegrationsGrid />
       
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RecentSearches />
+          <RecentSearches onSearchOpen={(query) => {
+            setIsSearchOpen(true);
+            // Pass the query to search modal if needed
+          }} />
           <SLAStatus />
         </div>
         
@@ -76,6 +81,7 @@ export default function Dashboard() {
         
         <RecentActivity />
       </div>
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
   );
 }

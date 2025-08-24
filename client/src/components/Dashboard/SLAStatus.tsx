@@ -5,8 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function SLAStatus() {
+  const [, setLocation] = useLocation();
   const { data: slaStatus, isLoading } = useQuery({
     queryKey: ["/api/sla/status"],
   });
@@ -107,7 +109,12 @@ export default function SLAStatus() {
               Service level agreement monitoring
             </p>
           </div>
-          <Button variant="ghost" size="sm" data-testid="view-sla-details">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation("/sla")}
+            data-testid="view-sla-details"
+          >
             <ExternalLink className="h-4 w-4" />
           </Button>
         </div>

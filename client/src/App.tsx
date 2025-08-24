@@ -36,7 +36,7 @@ function Router() {
       <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
         <Sidebar />
         <main className="flex-1 lg:ml-64 transition-all duration-300">
-          <Header />
+          <Header onSearchOpen={() => setIsSearchOpen(true)} />
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/analytics" component={Analytics} />

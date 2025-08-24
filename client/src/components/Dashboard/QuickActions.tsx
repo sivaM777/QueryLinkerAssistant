@@ -2,32 +2,85 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, Download, Settings } from "lucide-react";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function QuickActions() {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+
+  const syncAllMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/systems/sync-all");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sync Started",
+        description: "All systems are being synchronized",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/systems"] });
+    },
+    onError: () => {
+      toast({
+        title: "Sync Failed",
+        description: "Failed to start system synchronization",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const exportReportMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/reports/export", { 
+        type: "dashboard",
+        format: "pdf" 
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Report Generated",
+        description: "Dashboard report has been generated and downloaded",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Export Failed", 
+        description: "Failed to generate dashboard report",
+        variant: "destructive",
+      });
+    },
+  });
+
   const actions = [
     {
       title: "Create Solution",
       icon: Plus,
       color: "primary",
-      action: () => console.log("Create solution"),
+      action: () => setLocation("/knowledge?action=create"),
     },
     {
       title: "Sync Systems", 
       icon: RefreshCw,
       color: "blue",
-      action: () => console.log("Sync systems"),
+      action: () => syncAllMutation.mutate(),
+      loading: syncAllMutation.isPending,
     },
     {
       title: "Export Report",
       icon: Download,
       color: "green", 
-      action: () => console.log("Export report"),
+      action: () => exportReportMutation.mutate(),
+      loading: exportReportMutation.isPending,
     },
     {
       title: "Settings",
       icon: Settings,
       color: "purple",
-      action: () => console.log("Open settings"),
+      action: () => setLocation("/settings"),
     },
   ];
 
@@ -86,10 +139,11 @@ export default function QuickActions() {
                   variant="outline"
                   className="flex flex-col items-center p-6 h-auto border-2 border-dashed border-gray-200 dark:border-slate-600 hover:border-transparent transition-all group"
                   onClick={action.action}
+                  disabled={action.loading}
                   data-testid={`action-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-all group-hover:scale-110 ${colors.bg} ${colors.hover}`}>
-                    <Icon className={`h-6 w-6 transition-colors ${colors.icon}`} />
+                    <Icon className={`h-6 w-6 transition-colors ${colors.icon} ${action.loading ? 'animate-spin' : ''}`} />
                   </div>
                   <span className={`text-sm font-medium text-gray-700 dark:text-slate-300 transition-colors ${colors.text}`}>
                     {action.title}
