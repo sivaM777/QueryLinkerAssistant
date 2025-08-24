@@ -251,7 +251,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSystem(id: number): Promise<boolean> {
     const result = await db.delete(systems).where(eq(systems.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async updateSystemSyncTime(id: number): Promise<void> {
@@ -322,7 +322,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSolution(id: number): Promise<boolean> {
     const result = await db.delete(solutions).where(eq(solutions.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Interaction operations
@@ -366,13 +366,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSLARecords(targetId?: number, limit = 100): Promise<SLARecord[]> {
-    let query = db.select().from(slaRecords);
-    
     if (targetId) {
-      query = query.where(eq(slaRecords.targetId, targetId));
+      return await db.select().from(slaRecords)
+        .where(eq(slaRecords.targetId, targetId))
+        .orderBy(desc(slaRecords.recordedAt))
+        .limit(limit);
     }
 
-    return await query
+    return await db.select().from(slaRecords)
       .orderBy(desc(slaRecords.recordedAt))
       .limit(limit);
   }
@@ -391,13 +392,17 @@ export class DatabaseStorage implements IStorage {
 
   // Notification operations
   async getUserNotifications(userId: string, unreadOnly = false): Promise<Notification[]> {
-    let query = db.select().from(notifications).where(eq(notifications.userId, userId));
-    
     if (unreadOnly) {
-      query = query.where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+      return await db.select().from(notifications)
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)))
+        .orderBy(desc(notifications.createdAt))
+        .limit(50);
     }
 
-    return await query.orderBy(desc(notifications.createdAt)).limit(50);
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt))
+      .limit(50);
   }
 
   async createNotification(notification: InsertNotification): Promise<Notification> {
@@ -410,7 +415,7 @@ export class DatabaseStorage implements IStorage {
       .update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Search analytics
@@ -617,13 +622,14 @@ export class DatabaseStorage implements IStorage {
 
   // Service components operations
   async getServiceComponents(dataSourceId?: number): Promise<ServiceComponent[]> {
-    let query = db.select().from(serviceComponents);
-    
     if (dataSourceId) {
-      query = query.where(eq(serviceComponents.dataSourceId, dataSourceId));
+      return await db.select().from(serviceComponents)
+        .where(eq(serviceComponents.dataSourceId, dataSourceId))
+        .orderBy(serviceComponents.position, serviceComponents.name);
     }
 
-    return await query.orderBy(serviceComponents.position, serviceComponents.name);
+    return await db.select().from(serviceComponents)
+      .orderBy(serviceComponents.position, serviceComponents.name);
   }
 
   async upsertServiceComponent(component: InsertServiceComponent): Promise<ServiceComponent> {
