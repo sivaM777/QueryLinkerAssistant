@@ -21,7 +21,7 @@ import { useSystemFeatures } from "@/hooks/useSystemFeatures";
 
 const baseNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard, badge: "5" },
-  { name: "AI Search", href: "/search", icon: Search },
+  { name: "AI Search", href: "#", icon: Search, isSearchTrigger: true },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "SLA Management", href: "/sla", icon: Clock },
   { name: "Knowledge Base", href: "/knowledge", icon: BookOpen },
