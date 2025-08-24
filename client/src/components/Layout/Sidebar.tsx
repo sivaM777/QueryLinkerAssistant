@@ -33,7 +33,8 @@ const baseNavigation = [
 function SidebarContent() {
   const [location] = useLocation();
   const { availableFeatures, connectedSystemTypes } = useSystemFeatures();
-  
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   // Build navigation with system features
   const navigation = [...baseNavigation];
   
