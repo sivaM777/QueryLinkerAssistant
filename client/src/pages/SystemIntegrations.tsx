@@ -337,6 +337,12 @@ export default function SystemIntegrations() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => {
+                          toast({
+                            title: "Settings",
+                            description: `${system.name} settings will be available in a future update`,
+                          });
+                        }}
                         data-testid={`settings-button-${system.type}`}
                       >
                         <Settings className="h-4 w-4" />
