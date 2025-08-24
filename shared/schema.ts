@@ -1,0 +1,269 @@
+import { sql } from 'drizzle-orm';
+import {
+  index,
+  jsonb,
+  pgTable,
+  timestamp,
+  varchar,
+  text,
+  integer,
+  boolean,
+  serial,
+  interval,
+  primaryKey,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// Session storage table (mandatory for Replit Auth)
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table (mandatory for Replit Auth)
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role").notNull().default('user'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Systems table for external integrations
+export const systems = pgTable("systems", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // jira, confluence, github, servicenow
+  config: jsonb("config"),
+  isActive: boolean("is_active").default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Solutions table for knowledge base
+export const solutions = pgTable("solutions", {
+  id: serial("id").primaryKey(),
+  systemId: integer("system_id").references(() => systems.id),
+  externalId: varchar("external_id"),
+  title: text("title").notNull(),
+  content: text("content"),
+  metadata: jsonb("metadata"),
+  url: text("url"),
+  tags: varchar("tags").array(),
+  status: varchar("status").default('active'),
+  syncedAt: timestamp("synced_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User interactions tracking
+export const interactions = pgTable("interactions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  solutionId: integer("solution_id").references(() => solutions.id),
+  action: varchar("action", { length: 100 }).notNull(), // view, search, link, favorite
+  metadata: jsonb("metadata"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// SLA targets configuration
+export const slaTargets = pgTable("sla_targets", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  type: varchar("type").notNull(), // response_time, resolution_time, escalation_time
+  threshold: interval("threshold").notNull(),
+  escalationPolicy: jsonb("escalation_policy"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// SLA monitoring records
+export const slaRecords = pgTable("sla_records", {
+  id: serial("id").primaryKey(),
+  targetId: integer("target_id").references(() => slaTargets.id),
+  ticketId: varchar("ticket_id"),
+  systemId: integer("system_id").references(() => systems.id),
+  actualTime: interval("actual_time"),
+  status: varchar("status").notNull(), // met, breached, at_risk
+  metadata: jsonb("metadata"),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+});
+
+// System configurations for OAuth and sync settings
+export const systemConfigurations = pgTable("system_configurations", {
+  id: serial("id").primaryKey(),
+  systemId: integer("system_id").references(() => systems.id),
+  oauthCredentials: jsonb("oauth_credentials"),
+  syncInterval: integer("sync_interval"), // in minutes
+  lastConfigUpdate: timestamp("last_config_update").defaultNow(),
+});
+
+// Cache entries for performance
+export const cacheEntries = pgTable("cache_entries", {
+  id: serial("id").primaryKey(),
+  key: varchar("key").unique().notNull(),
+  value: jsonb("value"),
+  ttl: timestamp("ttl"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Notifications
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  type: varchar("type", { length: 100 }).notNull(),
+  title: varchar("title").notNull(),
+  content: jsonb("content"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Search queries for analytics
+export const searchQueries = pgTable("search_queries", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  query: text("query").notNull(),
+  resultsCount: integer("results_count"),
+  confidence: integer("confidence"), // 0-100
+  systemsSearched: varchar("systems_searched").array(),
+  metadata: jsonb("metadata"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  interactions: many(interactions),
+  notifications: many(notifications),
+  searchQueries: many(searchQueries),
+}));
+
+export const systemsRelations = relations(systems, ({ many, one }) => ({
+  solutions: many(solutions),
+  slaRecords: many(slaRecords),
+  configuration: one(systemConfigurations),
+}));
+
+export const solutionsRelations = relations(solutions, ({ one, many }) => ({
+  system: one(systems, {
+    fields: [solutions.systemId],
+    references: [systems.id],
+  }),
+  interactions: many(interactions),
+}));
+
+export const interactionsRelations = relations(interactions, ({ one }) => ({
+  user: one(users, {
+    fields: [interactions.userId],
+    references: [users.id],
+  }),
+  solution: one(solutions, {
+    fields: [interactions.solutionId],
+    references: [solutions.id],
+  }),
+}));
+
+export const slaTargetsRelations = relations(slaTargets, ({ many }) => ({
+  records: many(slaRecords),
+}));
+
+export const slaRecordsRelations = relations(slaRecords, ({ one }) => ({
+  target: one(slaTargets, {
+    fields: [slaRecords.targetId],
+    references: [slaTargets.id],
+  }),
+  system: one(systems, {
+    fields: [slaRecords.systemId],
+    references: [systems.id],
+  }),
+}));
+
+export const systemConfigurationsRelations = relations(systemConfigurations, ({ one }) => ({
+  system: one(systems, {
+    fields: [systemConfigurations.systemId],
+    references: [systems.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const searchQueriesRelations = relations(searchQueries, ({ one }) => ({
+  user: one(users, {
+    fields: [searchQueries.userId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSystemSchema = createInsertSchema(systems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSolutionSchema = createInsertSchema(solutions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInteractionSchema = createInsertSchema(interactions).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertSLATargetSchema = createInsertSchema(slaTargets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSearchQuerySchema = createInsertSchema(searchQueries).omit({
+  id: true,
+  timestamp: true,
+});
+
+// Types
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type System = typeof systems.$inferSelect;
+export type InsertSystem = z.infer<typeof insertSystemSchema>;
+export type Solution = typeof solutions.$inferSelect;
+export type InsertSolution = z.infer<typeof insertSolutionSchema>;
+export type Interaction = typeof interactions.$inferSelect;
+export type InsertInteraction = z.infer<typeof insertInteractionSchema>;
+export type SLATarget = typeof slaTargets.$inferSelect;
+export type InsertSLATarget = z.infer<typeof insertSLATargetSchema>;
+export type SLARecord = typeof slaRecords.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type SearchQuery = typeof searchQueries.$inferSelect;
+export type InsertSearchQuery = z.infer<typeof insertSearchQuerySchema>;
+export type SystemConfiguration = typeof systemConfigurations.$inferSelect;
