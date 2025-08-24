@@ -142,6 +142,104 @@ export const searchQueries = pgTable("search_queries", {
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
+// External data sources for IT service aggregation
+export const dataSources = pgTable("data_sources", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // statuspage, jira, servicenow, azure, etc
+  baseUrl: text("base_url").notNull(),
+  apiKey: text("api_key"), // encrypted
+  oauthConfig: jsonb("oauth_config"),
+  syncInterval: integer("sync_interval").default(300), // seconds
+  isActive: boolean("is_active").default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+  nextSyncAt: timestamp("next_sync_at"),
+  retryCount: integer("retry_count").default(0),
+  lastError: text("last_error"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// IT service incidents aggregated from external sources
+export const incidents = pgTable("incidents", {
+  id: serial("id").primaryKey(),
+  externalId: varchar("external_id").notNull(),
+  dataSourceId: integer("data_source_id").references(() => dataSources.id),
+  systemName: varchar("system_name", { length: 200 }).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).notNull(), // investigating, identified, monitoring, resolved
+  severity: varchar("severity", { length: 20 }), // critical, high, medium, low
+  impact: varchar("impact", { length: 50 }), // operational, degraded_performance, partial_outage, major_outage
+  startedAt: timestamp("started_at"),
+  resolvedAt: timestamp("resolved_at"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  externalUrl: text("external_url"),
+  affectedServices: varchar("affected_services").array(),
+  tags: varchar("tags").array(),
+  metadata: jsonb("metadata"),
+  syncedAt: timestamp("synced_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+}, (table) => [
+  index("idx_incidents_external_source").on(table.externalId, table.dataSourceId),
+  index("idx_incidents_status").on(table.status),
+  index("idx_incidents_severity").on(table.severity),
+  index("idx_incidents_system").on(table.systemName),
+  index("idx_incidents_started_at").on(table.startedAt),
+]);
+
+// Incident updates/timeline for tracking changes
+export const incidentUpdates = pgTable("incident_updates", {
+  id: serial("id").primaryKey(),
+  incidentId: integer("incident_id").references(() => incidents.id),
+  updateType: varchar("update_type", { length: 50 }).notNull(), // status_change, new_update, resolved
+  previousStatus: varchar("previous_status", { length: 50 }),
+  newStatus: varchar("new_status", { length: 50 }),
+  message: text("message"),
+  timestamp: timestamp("timestamp").defaultNow(),
+  metadata: jsonb("metadata"),
+}, (table) => [
+  index("idx_incident_updates_incident").on(table.incidentId),
+  index("idx_incident_updates_timestamp").on(table.timestamp),
+]);
+
+// Service components and their status
+export const serviceComponents = pgTable("service_components", {
+  id: serial("id").primaryKey(),
+  dataSourceId: integer("data_source_id").references(() => dataSources.id),
+  externalId: varchar("external_id"),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).notNull(), // operational, degraded, partial_outage, major_outage
+  group: varchar("group", { length: 100 }),
+  position: integer("position"),
+  showUptime: boolean("show_uptime").default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  syncedAt: timestamp("synced_at").defaultNow(),
+  metadata: jsonb("metadata"),
+}, (table) => [
+  index("idx_service_components_source").on(table.dataSourceId),
+  index("idx_service_components_status").on(table.status),
+]);
+
+// Real-time incident metrics for dashboards
+export const incidentMetrics = pgTable("incident_metrics", {
+  id: serial("id").primaryKey(),
+  date: timestamp("date").notNull(),
+  dataSourceId: integer("data_source_id").references(() => dataSources.id),
+  totalIncidents: integer("total_incidents").default(0),
+  resolvedIncidents: integer("resolved_incidents").default(0),
+  criticalIncidents: integer("critical_incidents").default(0),
+  highIncidents: integer("high_incidents").default(0),
+  averageResolutionTime: integer("avg_resolution_time"), // minutes
+  uptimePercentage: integer("uptime_percentage"), // 0-10000 (for 2 decimal precision)
+  metadata: jsonb("metadata"),
+}, (table) => [
+  index("idx_incident_metrics_date").on(table.date),
+  index("idx_incident_metrics_source").on(table.dataSourceId),
+]);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   interactions: many(interactions),
@@ -210,6 +308,41 @@ export const searchQueriesRelations = relations(searchQueries, ({ one }) => ({
   }),
 }));
 
+export const dataSourcesRelations = relations(dataSources, ({ many }) => ({
+  incidents: many(incidents),
+  serviceComponents: many(serviceComponents),
+  incidentMetrics: many(incidentMetrics),
+}));
+
+export const incidentsRelations = relations(incidents, ({ one, many }) => ({
+  dataSource: one(dataSources, {
+    fields: [incidents.dataSourceId],
+    references: [dataSources.id],
+  }),
+  updates: many(incidentUpdates),
+}));
+
+export const incidentUpdatesRelations = relations(incidentUpdates, ({ one }) => ({
+  incident: one(incidents, {
+    fields: [incidentUpdates.incidentId],
+    references: [incidents.id],
+  }),
+}));
+
+export const serviceComponentsRelations = relations(serviceComponents, ({ one }) => ({
+  dataSource: one(dataSources, {
+    fields: [serviceComponents.dataSourceId],
+    references: [dataSources.id],
+  }),
+}));
+
+export const incidentMetricsRelations = relations(incidentMetrics, ({ one }) => ({
+  dataSource: one(dataSources, {
+    fields: [incidentMetrics.dataSourceId],
+    references: [dataSources.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -250,6 +383,31 @@ export const insertSearchQuerySchema = createInsertSchema(searchQueries).omit({
   timestamp: true,
 });
 
+export const insertDataSourceSchema = createInsertSchema(dataSources).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertIncidentSchema = createInsertSchema(incidents).omit({
+  id: true,
+  syncedAt: true,
+});
+
+export const insertIncidentUpdateSchema = createInsertSchema(incidentUpdates).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertServiceComponentSchema = createInsertSchema(serviceComponents).omit({
+  id: true,
+  syncedAt: true,
+});
+
+export const insertIncidentMetricSchema = createInsertSchema(incidentMetrics).omit({
+  id: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -267,3 +425,13 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type SearchQuery = typeof searchQueries.$inferSelect;
 export type InsertSearchQuery = z.infer<typeof insertSearchQuerySchema>;
 export type SystemConfiguration = typeof systemConfigurations.$inferSelect;
+export type DataSource = typeof dataSources.$inferSelect;
+export type InsertDataSource = z.infer<typeof insertDataSourceSchema>;
+export type Incident = typeof incidents.$inferSelect;
+export type InsertIncident = z.infer<typeof insertIncidentSchema>;
+export type IncidentUpdate = typeof incidentUpdates.$inferSelect;
+export type InsertIncidentUpdate = z.infer<typeof insertIncidentUpdateSchema>;
+export type ServiceComponent = typeof serviceComponents.$inferSelect;
+export type InsertServiceComponent = z.infer<typeof insertServiceComponentSchema>;
+export type IncidentMetric = typeof incidentMetrics.$inferSelect;
+export type InsertIncidentMetric = z.infer<typeof insertIncidentMetricSchema>;

@@ -19,6 +19,9 @@ interface MetricsData {
   systemsConnected: number;
   incidentsResolved: number;
   avgResolutionTime: string;
+  activeIncidents?: number;
+  criticalIncidents?: number;
+  dataSourcesActive?: number;
 }
 
 interface MetricsCardsProps {
@@ -37,20 +40,20 @@ export default function MetricsCards({ metrics, isLoading }: MetricsCardsProps) 
       color: "blue",
     },
     {
-      title: "Incidents Resolved",
-      value: metrics?.incidentsResolved?.toString() || "0",
-      change: "3 at risk",
-      changeType: "warning" as const,
-      icon: CheckCircle,
-      color: "green",
+      title: "Active Incidents",
+      value: metrics?.activeIncidents?.toString() || "0",
+      change: `${metrics?.criticalIncidents || 0} critical`,
+      changeType: (metrics?.criticalIncidents || 0) > 0 ? "warning" as const : "info" as const,
+      icon: AlertTriangle,
+      color: (metrics?.criticalIncidents || 0) > 0 ? "red" as "red" : "green",
     },
     {
-      title: "Systems Connected",
-      value: metrics?.systemsConnected?.toString() || "0",
-      change: "+2.1% improvement",
+      title: "Data Sources",
+      value: metrics?.dataSourcesActive?.toString() || "0",
+      change: "Live monitoring",
       changeType: "positive" as const,
-      icon: Search,
-      color: "green",
+      icon: Database,
+      color: "blue",
     },
     {
       title: "Avg. Resolution Time",
@@ -91,6 +94,7 @@ export default function MetricsCards({ metrics, isLoading }: MetricsCardsProps) 
           blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
           green: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
           purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
+          red: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
         };
 
         const changeClasses = {

@@ -8,6 +8,11 @@ import {
   notifications,
   searchQueries,
   systemConfigurations,
+  dataSources,
+  incidents,
+  incidentUpdates,
+  serviceComponents,
+  incidentMetrics,
   type User,
   type UpsertUser,
   type System,
@@ -24,6 +29,16 @@ import {
   type SearchQuery,
   type InsertSearchQuery,
   type SystemConfiguration,
+  type DataSource,
+  type InsertDataSource,
+  type Incident,
+  type InsertIncident,
+  type IncidentUpdate,
+  type InsertIncidentUpdate,
+  type ServiceComponent,
+  type InsertServiceComponent,
+  type IncidentMetric,
+  type InsertIncidentMetric,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, gte, lte, like, ilike, or } from "drizzle-orm";
@@ -85,6 +100,38 @@ export interface IStorage {
   // System configurations
   getSystemConfiguration(systemId: number): Promise<SystemConfiguration | undefined>;
   updateSystemConfiguration(systemId: number, config: Partial<SystemConfiguration>): Promise<SystemConfiguration>;
+
+  // Data sources for incident aggregation
+  getDataSources(): Promise<DataSource[]>;
+  getDataSource(id: number): Promise<DataSource | undefined>;
+  createDataSource(dataSource: InsertDataSource): Promise<DataSource>;
+  updateDataSource(id: number, updates: Partial<InsertDataSource>): Promise<DataSource>;
+  updateDataSourceSyncTime(id: number, error?: string): Promise<void>;
+
+  // Incidents management
+  getIncidents(limit?: number, offset?: number): Promise<Incident[]>;
+  getIncidentsByDataSource(dataSourceId: number): Promise<Incident[]>;
+  getIncident(id: number): Promise<Incident | undefined>;
+  createIncident(incident: InsertIncident): Promise<Incident>;
+  updateIncident(id: number, updates: Partial<InsertIncident>): Promise<Incident>;
+  upsertIncidentByExternalId(externalId: string, dataSourceId: number, incident: InsertIncident): Promise<Incident>;
+
+  // Incident updates
+  getIncidentUpdates(incidentId: number): Promise<IncidentUpdate[]>;
+  createIncidentUpdate(update: InsertIncidentUpdate): Promise<IncidentUpdate>;
+
+  // Service components
+  getServiceComponents(dataSourceId?: number): Promise<ServiceComponent[]>;
+  upsertServiceComponent(component: InsertServiceComponent): Promise<ServiceComponent>;
+
+  // Incident metrics
+  getIncidentMetrics(dataSourceId?: number, days?: number): Promise<IncidentMetric[]>;
+  upsertIncidentMetric(metric: InsertIncidentMetric): Promise<IncidentMetric>;
+
+  // Real-time incident aggregation
+  getActiveIncidents(): Promise<Incident[]>;
+  getIncidentsByStatus(status: string): Promise<Incident[]>;
+  getIncidentsBySeverity(severity: string): Promise<Incident[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -391,6 +438,196 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return updatedConfig;
+  }
+
+  // Data sources operations
+  async getDataSources(): Promise<DataSource[]> {
+    return await db.select().from(dataSources).orderBy(dataSources.name);
+  }
+
+  async getDataSource(id: number): Promise<DataSource | undefined> {
+    const [dataSource] = await db.select().from(dataSources).where(eq(dataSources.id, id));
+    return dataSource;
+  }
+
+  async createDataSource(dataSource: InsertDataSource): Promise<DataSource> {
+    const [newDataSource] = await db.insert(dataSources).values(dataSource).returning();
+    return newDataSource;
+  }
+
+  async updateDataSource(id: number, updates: Partial<InsertDataSource>): Promise<DataSource> {
+    const [updatedDataSource] = await db
+      .update(dataSources)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(dataSources.id, id))
+      .returning();
+    return updatedDataSource;
+  }
+
+  async updateDataSourceSyncTime(id: number, error?: string): Promise<void> {
+    const updateData: any = {
+      lastSyncAt: new Date(),
+      updatedAt: new Date(),
+      retryCount: error ? sql`${dataSources.retryCount} + 1` : 0,
+    };
+
+    if (error) {
+      updateData.lastError = error;
+    } else {
+      updateData.lastError = null;
+    }
+
+    await db
+      .update(dataSources)
+      .set(updateData)
+      .where(eq(dataSources.id, id));
+  }
+
+  // Incidents operations
+  async getIncidents(limit = 50, offset = 0): Promise<Incident[]> {
+    return await db
+      .select()
+      .from(incidents)
+      .orderBy(desc(incidents.startedAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getIncidentsByDataSource(dataSourceId: number): Promise<Incident[]> {
+    return await db
+      .select()
+      .from(incidents)
+      .where(eq(incidents.dataSourceId, dataSourceId))
+      .orderBy(desc(incidents.startedAt));
+  }
+
+  async getIncident(id: number): Promise<Incident | undefined> {
+    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
+    return incident;
+  }
+
+  async createIncident(incident: InsertIncident): Promise<Incident> {
+    const [newIncident] = await db.insert(incidents).values(incident).returning();
+    return newIncident;
+  }
+
+  async updateIncident(id: number, updates: Partial<InsertIncident>): Promise<Incident> {
+    const [updatedIncident] = await db
+      .update(incidents)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(incidents.id, id))
+      .returning();
+    return updatedIncident;
+  }
+
+  async upsertIncidentByExternalId(externalId: string, dataSourceId: number, incident: InsertIncident): Promise<Incident> {
+    const [upsertedIncident] = await db
+      .insert(incidents)
+      .values(incident)
+      .onConflictDoUpdate({
+        target: [incidents.externalId, incidents.dataSourceId],
+        set: { ...incident, updatedAt: new Date(), syncedAt: new Date() },
+      })
+      .returning();
+    return upsertedIncident;
+  }
+
+  // Incident updates operations
+  async getIncidentUpdates(incidentId: number): Promise<IncidentUpdate[]> {
+    return await db
+      .select()
+      .from(incidentUpdates)
+      .where(eq(incidentUpdates.incidentId, incidentId))
+      .orderBy(desc(incidentUpdates.timestamp));
+  }
+
+  async createIncidentUpdate(update: InsertIncidentUpdate): Promise<IncidentUpdate> {
+    const [newUpdate] = await db.insert(incidentUpdates).values(update).returning();
+    return newUpdate;
+  }
+
+  // Service components operations
+  async getServiceComponents(dataSourceId?: number): Promise<ServiceComponent[]> {
+    let query = db.select().from(serviceComponents);
+    
+    if (dataSourceId) {
+      query = query.where(eq(serviceComponents.dataSourceId, dataSourceId));
+    }
+
+    return await query.orderBy(serviceComponents.position, serviceComponents.name);
+  }
+
+  async upsertServiceComponent(component: InsertServiceComponent): Promise<ServiceComponent> {
+    const [upsertedComponent] = await db
+      .insert(serviceComponents)
+      .values(component)
+      .onConflictDoUpdate({
+        target: [serviceComponents.externalId, serviceComponents.dataSourceId],
+        set: { ...component, updatedAt: new Date(), syncedAt: new Date() },
+      })
+      .returning();
+    return upsertedComponent;
+  }
+
+  // Incident metrics operations
+  async getIncidentMetrics(dataSourceId?: number, days = 30): Promise<IncidentMetric[]> {
+    let query = db.select().from(incidentMetrics);
+    
+    const conditions = [gte(incidentMetrics.date, sql`NOW() - INTERVAL '${days} days'`)];
+    
+    if (dataSourceId) {
+      conditions.push(eq(incidentMetrics.dataSourceId, dataSourceId));
+    }
+
+    return await query
+      .where(and(...conditions))
+      .orderBy(desc(incidentMetrics.date));
+  }
+
+  async upsertIncidentMetric(metric: InsertIncidentMetric): Promise<IncidentMetric> {
+    const [upsertedMetric] = await db
+      .insert(incidentMetrics)
+      .values(metric)
+      .onConflictDoUpdate({
+        target: [incidentMetrics.date, incidentMetrics.dataSourceId],
+        set: metric,
+      })
+      .returning();
+    return upsertedMetric;
+  }
+
+  // Real-time incident queries
+  async getActiveIncidents(): Promise<Incident[]> {
+    return await db
+      .select()
+      .from(incidents)
+      .where(and(
+        eq(incidents.isActive, true),
+        sql`${incidents.status} != 'resolved'`
+      ))
+      .orderBy(desc(incidents.startedAt));
+  }
+
+  async getIncidentsByStatus(status: string): Promise<Incident[]> {
+    return await db
+      .select()
+      .from(incidents)
+      .where(and(
+        eq(incidents.status, status),
+        eq(incidents.isActive, true)
+      ))
+      .orderBy(desc(incidents.startedAt));
+  }
+
+  async getIncidentsBySeverity(severity: string): Promise<Incident[]> {
+    return await db
+      .select()
+      .from(incidents)
+      .where(and(
+        eq(incidents.severity, severity),
+        eq(incidents.isActive, true)
+      ))
+      .orderBy(desc(incidents.startedAt));
   }
 }
 

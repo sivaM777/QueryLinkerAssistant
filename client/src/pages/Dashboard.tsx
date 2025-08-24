@@ -10,6 +10,7 @@ import RecentSearches from "@/components/Dashboard/RecentSearches";
 import SLAStatus from "@/components/Dashboard/SLAStatus";
 import QuickActions from "@/components/Dashboard/QuickActions";
 import RecentActivity from "@/components/Dashboard/RecentActivity";
+import ActiveIncidents from "@/components/Dashboard/ActiveIncidents";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -58,6 +59,27 @@ export default function Dashboard() {
     },
   });
 
+  // Fetch active incidents count for metrics
+  const { data: activeIncidents } = useQuery({
+    queryKey: ["/api/incidents/active"],
+    enabled: isAuthenticated,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch data sources for metrics
+  const { data: dataSources } = useQuery({
+    queryKey: ["/api/data-sources"],
+    enabled: isAuthenticated,
+  });
+
+  // Enhanced metrics with real-time incident data
+  const enhancedMetrics = metrics ? {
+    ...metrics,
+    activeIncidents: activeIncidents?.length || 0,
+    criticalIncidents: activeIncidents?.filter((i: any) => i.severity === 'critical').length || 0,
+    dataSourcesActive: dataSources?.filter((ds: any) => ds.isActive).length || 0,
+  } : undefined;
+
   if (isLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -68,7 +90,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6 animate-fadeIn" data-testid="dashboard-page">
-      <MetricsCards metrics={metrics} isLoading={metricsLoading} />
+      <MetricsCards metrics={enhancedMetrics} isLoading={metricsLoading} />
+      
+      <ActiveIncidents />
       
       <SystemIntegrationsGrid />
       

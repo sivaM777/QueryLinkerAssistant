@@ -4,7 +4,7 @@ import { Link as LinkIcon, Search, BarChart3, Shield, Zap, Users } from "lucide-
 
 export default function Landing() {
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
   };
 
   return (

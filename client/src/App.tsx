@@ -13,17 +13,35 @@ import SLAManagement from "@/pages/SLAManagement";
 import KnowledgeBase from "@/pages/KnowledgeBase";
 import Settings from "@/pages/Settings";
 import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
+import { useState } from "react";
 import SearchModal from "@/components/SearchModal";
 import FloatingActionButton from "@/components/FloatingActionButton";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading || !isAuthenticated) {
-    return <Route path="*" component={Landing} />;
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-slate-400">Loading...</p>
+      </div>
+    </div>;
   }
+
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="*" component={Landing} />
+      </Switch>
+    );
+  }
+
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
@@ -40,7 +58,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
-      <SearchModal />
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <FloatingActionButton />
     </div>
   );
