@@ -103,7 +103,7 @@ export default function SystemIntegrationsGrid() {
         description: "Issue tracking and project management",
       },
       notion: {
-        icon: "📝",
+        icon: "��",
         color: "gray",
         description: "Documentation and knowledge management",
       },
@@ -167,14 +167,16 @@ export default function SystemIntegrationsGrid() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {systemConfigs.map((system, index) => {
-            const isConnected = true; // Mock connection status
-            const lastSync = `${Math.floor(Math.random() * 10) + 1} min ago`;
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {(systems || []).map((system: any, index: number) => {
+            const config = getSystemConfig(system);
+            const lastSync = system.lastSyncAt
+              ? new Date(system.lastSyncAt).toLocaleString()
+              : 'Never';
 
             return (
               <motion.div
-                key={system.name}
+                key={system.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
@@ -183,64 +185,68 @@ export default function SystemIntegrationsGrid() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
-                    <div className="text-2xl">{system.icon}</div>
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">
+                    <div className="text-2xl">{config.icon}</div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-medium text-gray-900 dark:text-white truncate">
                         {system.name}
                       </h4>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
                         Last sync: {lastSync}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant={isConnected ? "default" : "secondary"}
-                      className={isConnected ? "bg-green-500 hover:bg-green-500" : ""}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge
+                      variant={system.isActive ? "default" : "secondary"}
+                      className={system.isActive ? "bg-green-500 hover:bg-green-500" : ""}
                     >
-                      {isConnected ? "Connected" : "Disconnected"}
+                      {system.isActive ? "Connected" : "Disconnected"}
                     </Badge>
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-600 dark:text-slate-400 mb-3">
-                  {system.description}
+                <p className="text-xs text-gray-600 dark:text-slate-400 mb-3 line-clamp-2">
+                  {config.description}
                 </p>
 
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-slate-400">Records</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {system.recordCount}
+                    <span className="text-gray-500 dark:text-slate-400">Type</span>
+                    <span className="font-medium text-gray-900 dark:text-white capitalize truncate">
+                      {system.type}
                     </span>
                   </div>
-                  <Progress 
-                    value={system.syncProgress} 
-                    className="h-2"
-                    data-testid={`sync-progress-${system.type}`}
-                  />
-                  <div className="text-xs text-gray-500 dark:text-slate-400 text-right">
-                    {system.syncProgress}% synced
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-slate-400">Status</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {system.isActive ? "Active" : "Inactive"}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => syncMutation.mutate(index + 1)}
+                    onClick={() => syncMutation.mutate(system.id)}
                     disabled={syncMutation.isPending}
                     data-testid={`sync-button-${system.type}`}
+                    className="flex-shrink-0"
                   >
                     <RefreshCw className={`h-4 w-4 mr-1 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
                     Sync
                   </Button>
-                  
-                  <div className="flex items-center gap-1">
+
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setLocation(`/integrations/${system.type}/settings`)}
+                      onClick={() => {
+                        toast({
+                          title: "Settings",
+                          description: `${system.name} settings will be available in a future update`,
+                        });
+                      }}
                       data-testid={`settings-button-${system.type}`}
                     >
                       <Settings className="h-4 w-4" />
@@ -250,8 +256,8 @@ export default function SystemIntegrationsGrid() {
                       size="sm"
                       className="text-red-600 hover:text-red-700"
                       onClick={() => {
-                        if (confirm(`Are you sure you want to remove ${system.name}?`)) {
-                          deleteMutation.mutate(index + 1);
+                        if (confirm(`Are you sure you want to remove ${system.name}? All associated solutions will be deleted.`)) {
+                          deleteMutation.mutate(system.id);
                         }
                       }}
                       disabled={deleteMutation.isPending}
@@ -264,6 +270,27 @@ export default function SystemIntegrationsGrid() {
               </motion.div>
             );
           })}
+
+          {/* Add empty state when no systems */}
+          {(!systems || systems.length === 0) && !isLoading && (
+            <div className="col-span-full text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Settings className="h-12 w-12 mx-auto" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No System Integrations
+              </h3>
+              <p className="text-gray-500 dark:text-slate-400 mb-4">
+                Connect your first system to start managing integrations
+              </p>
+              <Button
+                onClick={() => setLocation("/integrations")}
+                data-testid="go-to-integrations"
+              >
+                Go to Integrations
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
