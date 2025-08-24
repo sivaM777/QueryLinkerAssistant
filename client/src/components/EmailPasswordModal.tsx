@@ -19,6 +19,7 @@ interface EmailPasswordModalProps {
 export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -70,12 +71,18 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
     onSuccess: (data) => {
       toast({
         title: "Account Created",
-        description: "Your account has been created successfully!",
+        description: "Your account has been created successfully! Please log in.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      onClose();
-      // Redirect to dashboard
-      window.location.href = '/';
+      // Clear form data
+      setFormData({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        firstName: '',
+        lastName: '',
+      });
+      // Switch to login tab
+      setActiveTab('login');
     },
     onError: (error: any) => {
       toast({
@@ -142,7 +149,7 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
             </DialogDescription>
           </DialogHeader>
 
-        <Tabs defaultValue="login" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Log In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>

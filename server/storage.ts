@@ -42,6 +42,8 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, gte, lte, like, ilike, or } from "drizzle-orm";
+import fs from 'fs';
+import path from 'path';
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -1126,8 +1128,6 @@ class PersistentStorage extends MemoryStorage {
         idCounter: this.idCounter,
       };
       
-      const fs = require('fs');
-      const path = require('path');
       
       // Ensure directory exists
       const dir = path.dirname(this.dataFile);
@@ -1144,7 +1144,6 @@ class PersistentStorage extends MemoryStorage {
 
   private loadData() {
     try {
-      const fs = require('fs');
       if (fs.existsSync(this.dataFile)) {
         const data = JSON.parse(fs.readFileSync(this.dataFile, 'utf8'));
         
