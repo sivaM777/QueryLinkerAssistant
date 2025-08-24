@@ -94,8 +94,10 @@ export default function Header({ onSearchOpen }: HeaderProps = {}) {
               size="sm"
               className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
               onClick={() => {
-                // TODO: Open notifications panel/modal
-                alert("Notifications feature coming soon!");
+                toast({
+                  title: "Notifications",
+                  description: "No new notifications at this time",
+                });
               }}
               data-testid="notifications-button"
             >
