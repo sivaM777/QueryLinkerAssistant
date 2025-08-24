@@ -723,21 +723,21 @@ export class DatabaseStorage implements IStorage {
 
 // In-memory storage for development fallback
 class MemoryStorage implements IStorage {
-  private users: Map<string, User> = new Map();
-  private usersByEmail: Map<string, User> = new Map();
-  private systems: System[] = [];
-  private solutions: Solution[] = [];
-  private interactions: Interaction[] = [];
-  private slaTargets: SLATarget[] = [];
-  private slaRecords: SLARecord[] = [];
-  private notifications: Notification[] = [];
-  private searchQueries: SearchQuery[] = [];
-  private dataSources: DataSource[] = [];
-  private incidents: Incident[] = [];
-  private incidentUpdates: IncidentUpdate[] = [];
-  private serviceComponents: ServiceComponent[] = [];
-  private incidentMetrics: IncidentMetric[] = [];
-  private idCounter = 1;
+  protected users: Map<string, User> = new Map();
+  protected usersByEmail: Map<string, User> = new Map();
+  protected systems: System[] = [];
+  protected solutions: Solution[] = [];
+  protected interactions: Interaction[] = [];
+  protected slaTargets: SLATarget[] = [];
+  protected slaRecords: SLARecord[] = [];
+  protected notifications: Notification[] = [];
+  protected searchQueries: SearchQuery[] = [];
+  protected dataSources: DataSource[] = [];
+  protected incidents: Incident[] = [];
+  protected incidentUpdates: IncidentUpdate[] = [];
+  protected serviceComponents: ServiceComponent[] = [];
+  protected incidentMetrics: IncidentMetric[] = [];
+  protected idCounter = 1;
 
   // User operations
   async getUser(id: string): Promise<User | undefined> {
@@ -1089,25 +1089,185 @@ class MemoryStorage implements IStorage {
   }
 }
 
-// Create storage instance - use memory storage for development
-let storage: IStorage;
+// Enhanced persistent storage that mimics database behavior
+class PersistentStorage extends MemoryStorage {
+  private dataFile = './.local/itsm_data.json';
 
-async function initializeStorage() {
-  try {
-    // Test database connection by trying a simple query
-    const testDbStorage = new DatabaseStorage();
-    await testDbStorage.getDashboardMetrics();
-    storage = testDbStorage;
-    console.log('Using database storage');
-  } catch (error) {
-    console.warn('Database storage failed, using in-memory storage:', error?.message || error);
-    storage = new MemoryStorage();
-    console.log('Using in-memory storage for development');
+  constructor() {
+    super();
+    this.loadData();
+    // Auto-save every 30 seconds
+    setInterval(() => this.saveData(), 30000);
+    // Save on process exit
+    process.on('exit', () => this.saveData());
+    process.on('SIGINT', () => {
+      this.saveData();
+      process.exit(0);
+    });
+  }
+
+  private saveData() {
+    try {
+      const data = {
+        users: Array.from(this.users.entries()),
+        usersByEmail: Array.from(this.usersByEmail.entries()),
+        systems: this.systems,
+        solutions: this.solutions,
+        interactions: this.interactions,
+        slaTargets: this.slaTargets,
+        slaRecords: this.slaRecords,
+        notifications: this.notifications,
+        searchQueries: this.searchQueries,
+        dataSources: this.dataSources,
+        incidents: this.incidents,
+        incidentUpdates: this.incidentUpdates,
+        serviceComponents: this.serviceComponents,
+        incidentMetrics: this.incidentMetrics,
+        idCounter: this.idCounter,
+      };
+      
+      const fs = require('fs');
+      const path = require('path');
+      
+      // Ensure directory exists
+      const dir = path.dirname(this.dataFile);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      fs.writeFileSync(this.dataFile, JSON.stringify(data, null, 2));
+      console.log('✓ Database saved to persistent storage');
+    } catch (error) {
+      console.warn('Failed to save persistent data:', error);
+    }
+  }
+
+  private loadData() {
+    try {
+      const fs = require('fs');
+      if (fs.existsSync(this.dataFile)) {
+        const data = JSON.parse(fs.readFileSync(this.dataFile, 'utf8'));
+        
+        this.users = new Map(data.users || []);
+        this.usersByEmail = new Map(data.usersByEmail || []);
+        this.systems = data.systems || [];
+        this.solutions = data.solutions || [];
+        this.interactions = data.interactions || [];
+        this.slaTargets = data.slaTargets || [];
+        this.slaRecords = data.slaRecords || [];
+        this.notifications = data.notifications || [];
+        this.searchQueries = data.searchQueries || [];
+        this.dataSources = data.dataSources || [];
+        this.incidents = data.incidents || [];
+        this.incidentUpdates = data.incidentUpdates || [];
+        this.serviceComponents = data.serviceComponents || [];
+        this.incidentMetrics = data.incidentMetrics || [];
+        this.idCounter = data.idCounter || 1;
+        
+        console.log(`✓ Loaded database with ${this.users.size} users, ${this.systems.length} systems, ${this.solutions.length} solutions, ${this.incidents.length} incidents`);
+      } else {
+        console.log('✓ Starting with fresh database');
+        this.initializeDefaultData();
+      }
+    } catch (error) {
+      console.warn('Failed to load persistent data, starting fresh:', error);
+      this.initializeDefaultData();
+    }
+  }
+
+  private initializeDefaultData() {
+    // Add some initial systems for the ITSM platform
+    const defaultSystems: System[] = [
+      {
+        id: this.idCounter++,
+        name: 'Jira Service Management',
+        type: 'ticketing',
+        config: {
+          baseUrl: 'https://your-domain.atlassian.net',
+          authType: 'oauth',
+          syncInterval: 300,
+          description: 'Primary ticketing and incident management system'
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSyncAt: null,
+      },
+      {
+        id: this.idCounter++,
+        name: 'Confluence Knowledge Base',
+        type: 'knowledge',
+        config: {
+          baseUrl: 'https://your-domain.atlassian.net/wiki',
+          authType: 'oauth',
+          syncInterval: 600,
+          description: 'Internal documentation and knowledge base'
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSyncAt: null,
+      },
+      {
+        id: this.idCounter++,
+        name: 'GitHub Repository',
+        type: 'repository',
+        config: {
+          baseUrl: 'https://api.github.com',
+          authType: 'token',
+          syncInterval: 900,
+          description: 'Source code and technical documentation'
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSyncAt: null,
+      },
+    ];
+
+    this.systems = defaultSystems;
+
+    // Add some default SLA targets
+    const defaultSLAs: SLATarget[] = [
+      {
+        id: this.idCounter++,
+        name: 'Critical Issue Response',
+        type: 'response_time',
+        threshold: '15 minutes',
+        isActive: true,
+        escalationPolicy: {
+          levels: [
+            { delay: 15, action: 'notify_team_lead' },
+            { delay: 30, action: 'notify_manager' }
+          ]
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: this.idCounter++,
+        name: 'High Priority Resolution',
+        type: 'resolution_time',
+        threshold: '4 hours',
+        isActive: true,
+        escalationPolicy: {
+          levels: [
+            { delay: 240, action: 'notify_senior_team' },
+            { delay: 480, action: 'notify_director' }
+          ]
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    this.slaTargets = defaultSLAs;
+    console.log('✓ Initialized database with default ITSM systems and SLA targets');
   }
 }
 
-// Initialize with memory storage as fallback
-storage = new MemoryStorage();
-console.log('Using in-memory storage for development');
+// Create storage instance - use persistent storage that acts like a database
+const storage: IStorage = new PersistentStorage();
+console.log('✓ Using persistent file-based database storage');
 
 export { storage };
