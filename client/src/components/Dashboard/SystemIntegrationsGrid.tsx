@@ -59,44 +59,67 @@ export default function SystemIntegrationsGrid() {
     },
   });
 
-  const systemConfigs = [
-    {
-      name: "Jira Cloud",
-      type: "jira",
-      icon: "🎯",
-      color: "orange",
-      description: "Issue tracking and project management",
-      recordCount: "3,247 tickets",
-      syncProgress: 85,
-    },
-    {
-      name: "Confluence",
-      type: "confluence", 
-      icon: "📚",
-      color: "blue",
-      description: "Knowledge base and documentation",
-      recordCount: "8,912 pages",
-      syncProgress: 92,
-    },
-    {
-      name: "GitHub",
-      type: "github",
-      icon: "💻",
+  // System type configurations for display
+  const getSystemConfig = (system: any) => {
+    const configs = {
+      jira: {
+        icon: "🎯",
+        color: "orange",
+        description: "Issue tracking and project management",
+      },
+      confluence: {
+        icon: "📚",
+        color: "blue",
+        description: "Knowledge base and documentation",
+      },
+      github: {
+        icon: "💻",
+        color: "gray",
+        description: "Code repository and issues",
+      },
+      servicenow: {
+        icon: "☁️",
+        color: "teal",
+        description: "IT service management platform",
+      },
+      slack: {
+        icon: "💬",
+        color: "purple",
+        description: "Team communication and collaboration",
+      },
+      teams: {
+        icon: "💬",
+        color: "blue",
+        description: "Microsoft Teams communication",
+      },
+      zendesk: {
+        icon: "📋",
+        color: "green",
+        description: "Customer support and ticketing",
+      },
+      linear: {
+        icon: "📋",
+        color: "purple",
+        description: "Issue tracking and project management",
+      },
+      notion: {
+        icon: "📝",
+        color: "gray",
+        description: "Documentation and knowledge management",
+      },
+      "servicenow-itsm": {
+        icon: "📋",
+        color: "teal",
+        description: "IT service management platform",
+      },
+    };
+
+    return configs[system.type as keyof typeof configs] || {
+      icon: "🔧",
       color: "gray",
-      description: "Code repository and issues",
-      recordCount: "1,567 issues",
-      syncProgress: 78,
-    },
-    {
-      name: "ServiceNow",
-      type: "servicenow",
-      icon: "☁️",
-      color: "teal",
-      description: "IT service management platform",
-      recordCount: "4,823 KB articles",
-      syncProgress: 95,
-    },
-  ];
+      description: "Custom integration",
+    };
+  };
 
   if (isLoading) {
     return (
