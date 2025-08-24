@@ -16,10 +16,6 @@ const handleAppleLogin = () => {
   window.location.href = "https://appleid.apple.com/auth/authorize?client_id=YOUR_APPLE_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&response_type=code&scope=name email";
 };
 
-const handleSSOLogin = () => {
-  // Keep existing Replit Auth for SSO
-  window.location.href = "/api/login";
-};
 
 export default function Login() {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -94,25 +90,6 @@ export default function Login() {
               <span className="text-gray-700 dark:text-gray-200 font-medium">📧 Email & password</span>
             </Button>
 
-            <div className="relative py-2">
-              <Separator className="bg-gray-200 dark:bg-slate-600" />
-              <div className="absolute inset-0 flex justify-center items-center">
-                <span className="bg-white dark:bg-slate-900 px-3 text-sm text-gray-500 dark:text-slate-400">
-                  Or
-                </span>
-              </div>
-            </div>
-
-            {/* SSO Option */}
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full h-12 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600 transition-colors"
-              onClick={handleSSOLogin}
-              data-testid="sso-option"
-            >
-              <span className="text-gray-700 dark:text-gray-200 font-medium">🔗 Single sign-on (SSO)</span>
-            </Button>
 
             {/* Terms */}
             <div className="pt-4 text-center">
