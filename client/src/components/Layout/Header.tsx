@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Bell, Moon, Sun, Search } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +39,7 @@ export default function Header() {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            <SidebarTrigger className="lg:hidden" />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
             <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>

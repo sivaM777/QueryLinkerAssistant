@@ -30,10 +30,10 @@ function SidebarContent() {
   const [location] = useLocation();
 
   const handleLogout = () => {
-    // Clear any stored data and reload
+    // Clear any stored data and redirect to login
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = '/';
+    window.location.href = '/landing';
   };
 
   return (
