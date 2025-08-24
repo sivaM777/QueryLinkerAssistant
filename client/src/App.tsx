@@ -35,17 +35,19 @@ function Router() {
     <SidebarProvider>
       <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
         <Sidebar />
-        <main className="flex-1 lg:ml-64 transition-all duration-300">
+        <main className="flex-1 w-full lg:ml-64 transition-all duration-300 overflow-x-hidden">
           <Header onSearchOpen={() => setIsSearchOpen(true)} />
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/analytics" component={Analytics} />
-            <Route path="/integrations" component={SystemIntegrations} />
-            <Route path="/sla" component={SLAManagement} />
-            <Route path="/knowledge" component={KnowledgeBase} />
-            <Route path="/settings" component={Settings} />
-            <Route component={NotFound} />
-          </Switch>
+          <div className="w-full max-w-none">
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/analytics" component={Analytics} />
+              <Route path="/integrations" component={SystemIntegrations} />
+              <Route path="/sla" component={SLAManagement} />
+              <Route path="/knowledge" component={KnowledgeBase} />
+              <Route path="/settings" component={Settings} />
+              <Route component={NotFound} />
+            </Switch>
+          </div>
         </main>
         <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
         <FloatingActionButton />
