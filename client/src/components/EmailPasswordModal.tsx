@@ -28,9 +28,10 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
     firstName: '',
     lastName: '',
   });
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
