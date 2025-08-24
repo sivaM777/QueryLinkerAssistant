@@ -15,6 +15,8 @@ import {
 } from "@shared/schema";
 import { syncService } from './connectors';
 import { syncScheduler } from './scheduler';
+import bcrypt from 'bcryptjs';
+import { nanoid } from 'nanoid';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -29,6 +31,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Email/Password Authentication Routes
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: 'User already exists with this email' });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 12);
+      
+      // Create user
+      const user = await storage.createEmailUser({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        authProvider: 'email',
+      });
+
+      // Remove password from response
+      const { password: _, ...userResponse } = user;
+      res.status(201).json({ user: userResponse, message: 'Account created successfully' });
+    } catch (error) {
+      console.error('Signup error:', error);
+      res.status(500).json({ message: 'Failed to create account' });
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
+
+      // Update last login
+      await storage.updateUserLastLogin(user.id);
+
+      // Set session
+      (req as any).session.user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        authProvider: 'email',
+      };
+
+      // Remove password from response
+      const { password: _, ...userResponse } = user;
+      res.json({ user: userResponse, message: 'Login successful' });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: 'Login failed' });
+    }
+  });
+
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal whether email exists or not
+        return res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+      }
+
+      // Generate reset token
+      const resetToken = nanoid(32);
+      const resetExpires = new Date(Date.now() + 3600000); // 1 hour from now
+      
+      await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
+      
+      // In a real app, you'd send an email here
+      console.log(`Password reset token for ${email}: ${resetToken}`);
+      
+      res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ message: 'Failed to process password reset request' });
+    }
+  });
+
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: 'Token and new password are required' });
+      }
+
+      const user = await storage.getUserByResetToken(token);
+      if (!user || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+        return res.status(400).json({ message: 'Invalid or expired reset token' });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      
+      // Update password and clear reset token
+      await storage.updateUserPassword(user.id, hashedPassword);
+      
+      res.json({ message: 'Password reset successful' });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({ message: 'Failed to reset password' });
+    }
+  });
+
+  app.post('/api/auth/logout', async (req, res) => {
+    try {
+      (req as any).session.destroy((err: any) => {
+        if (err) {
+          console.error('Session destroy error:', err);
+          return res.status(500).json({ message: 'Failed to logout' });
+        }
+        res.json({ message: 'Logout successful' });
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ message: 'Failed to logout' });
+    }
+  });
+
+  // Get current user for email auth
+  app.get('/api/auth/me', async (req, res) => {
+    try {
+      const session = (req as any).session;
+      if (!session || !session.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+      
+      res.json({ user: session.user });
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ message: 'Failed to get user' });
     }
   });
 

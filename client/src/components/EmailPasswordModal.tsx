@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Eye, EyeOff, Mail } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 interface EmailPasswordModalProps {
   isOpen: boolean;
@@ -14,7 +18,7 @@ interface EmailPasswordModalProps {
 
 export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordModalProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -22,58 +26,121 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
     firstName: '',
     lastName: '',
   });
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate login API call
-    try {
-      console.log('Login attempt:', formData.email);
-      // Add actual login logic here
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  const loginMutation = useMutation({
+    mutationFn: async (data: { email: string; password: string }) => {
+      return await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       onClose();
-    } catch (error) {
-      console.error('Login failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      // Redirect to dashboard
+      window.location.href = '/';
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const signupMutation = useMutation({
+    mutationFn: async (data: { email: string; password: string; firstName: string; lastName: string }) => {
+      return await apiRequest('/api/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Account Created",
+        description: "Your account has been created successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      onClose();
+      // Redirect to dashboard
+      window.location.href = '/';
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Signup Failed",
+        description: error.message || "Failed to create account",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
       return;
     }
-    
-    setIsLoading(true);
-    
-    try {
-      console.log('Signup attempt:', formData.email);
-      // Add actual signup logic here
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      onClose();
-    } catch (error) {
-      console.error('Signup failed:', error);
-    } finally {
-      setIsLoading(false);
+    loginMutation.mutate({
+      email: formData.email,
+      password: formData.password,
+    });
+  };
+
+  const handleSignup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
     }
+    if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    signupMutation.mutate({
+      email: formData.email,
+      password: formData.password,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+    });
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Email & Password
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Email & Password
+            </DialogTitle>
+            <DialogDescription>
+              Sign in to your account or create a new one.
+            </DialogDescription>
+          </DialogHeader>
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -129,17 +196,20 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={isLoading}
+                    disabled={loginMutation.isPending}
                     data-testid="login-submit-button"
                   >
-                    {isLoading ? "Logging in..." : "Log In"}
+                    {loginMutation.isPending ? "Logging in..." : "Log In"}
                   </Button>
                   
                   <Button
                     type="button"
                     variant="link"
                     className="w-full text-sm"
-                    onClick={() => console.log('Forgot password clicked')}
+                    onClick={() => {
+                      onClose();
+                      setIsForgotPasswordOpen(true);
+                    }}
                   >
                     Forgot your password?
                   </Button>
@@ -234,17 +304,23 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={isLoading}
+                    disabled={signupMutation.isPending}
                     data-testid="signup-submit-button"
                   >
-                    {isLoading ? "Creating account..." : "Create Account"}
+                    {signupMutation.isPending ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+      
+      <ForgotPasswordModal 
+        isOpen={isForgotPasswordOpen} 
+        onClose={() => setIsForgotPasswordOpen(false)} 
+      />
+    </>
   );
 }
