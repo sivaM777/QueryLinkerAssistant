@@ -1,0 +1,32 @@
+Prompt: Real-Time IT Service Problem Aggregation Database
+Create a PostgreSQL-backed database and API system that collects, normalizes, and serves real-time IT service incident and problem data aggregated from multiple free and public ITSM and service status sources. The system should support integration with various external IT service problem data sources via their APIs and provide a unified, queryable interface for frontend clients with real-time update capabilities.
+
+Requirements
+Build connectors to periodically fetch or subscribe to incident and status updates from multiple free/public ITSM and service status APIs.
+
+Normalize incident data (including system name, incident ID, status, timestamps, descriptions, severity, external reference URLs) into a common schema and store in PostgreSQL.
+
+Provide REST and/or GraphQL endpoints to query incidents by system, status, severity, time range, etc.
+
+Implement real-time communication with frontend clients via WebSocket or Server-Sent Events to push live incident updates.
+
+Support OAuth or API key-based authentication where required to access external APIs.
+
+Enable dynamic registration of new data sources/systems with sync intervals and authentication settings.
+
+Implement caching, retry, and error handling strategies for robust data collection.
+
+Ensure secure design with input validation, rate limiting, and secure credentials handling.
+
+Suggested External Free/Public IT Service APIs and Platforms for Data Sources
+Platform/API	Description	URL
+Google Cloud Service Management	API for managing and discovering cloud services and status	https://cloud.google.com/service-infrastructure/docs/service-management/reference/rest
+Jira Service Management Cloud	Jira Service Desk incident and ticket API	https://developer.atlassian.com/cloud/jira/service-desk/rest/
+ServiceNow ITSM API	IT Service Management including AI-powered incident data	https://www.servicenow.com/products/itsm.html
+Freshservice Service Desk API	Cloud-based ITSM and business team IT service API	https://api.freshservice.com
+Statuspage.io / Instatus API	Public status and outage updates for SaaS and IT systems	https://www.statuspage.io/api
+Coralogix Incident Management API	Real-time incident event management	https://coralogix.com/docs/developer-portal/apis/data-management/incident-management-api/
+UptimeAPI / API Status Monitor	Real-time API and service uptime monitoring	https://uptimeapicloud.com
+Microsoft Azure REST APIs	Azure cloud and service status APIs	https://learn.microsoft.com/en-us/rest/api/azure/
+API Setu	Aggregated API marketplace offering government and private APIs	https://apisetu.gov.in
+This prompt guides the development of a production-ready real-time IT incident/problem aggregator that connects to these free/public sources, normalizes data, stores it in PostgreSQL, and serves as a centralized backend for query and notification.
