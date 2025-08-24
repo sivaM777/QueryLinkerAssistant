@@ -13,7 +13,6 @@ import {
   LogOut,
   Link as LinkIcon,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard, badge: "5" },
@@ -26,11 +25,6 @@ const navigation = [
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
-
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
-  };
 
   return (
     <aside className="w-64 bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300">
@@ -83,28 +77,18 @@ export default function Sidebar() {
         <div className="bg-white/10 dark:bg-slate-700/50 backdrop-blur-sm rounded-xl p-4 border border-white/20 dark:border-slate-600/30">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={user?.profileImageUrl || ""} alt="User avatar" />
               <AvatarFallback className="bg-primary text-primary-foreground">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
+                QL
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                {user?.firstName} {user?.lastName}
+                QueryLinker User
               </p>
               <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
-                {user?.role || 'User'}
+                User
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1"
-              data-testid="logout-button"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </div>

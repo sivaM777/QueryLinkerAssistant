@@ -127,19 +127,19 @@ export default function SLAStatus() {
                 <div className={`w-3 h-3 rounded-full ${getStatusColor(sla.status)}`} />
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {sla.name}
+                    {sla.name || sla.target?.name || 'SLA Target'}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-slate-400">
-                    Target: {sla.target}
+                    Target: {typeof sla.target === 'string' ? sla.target : sla.target?.threshold || 'N/A'}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className={`font-semibold ${getComplianceColor(sla.compliance)}`}>
-                  {sla.current}
+                <p className={`font-semibold ${getComplianceColor(sla.compliance || 0)}`}>
+                  {sla.current || sla.currentValue || 'N/A'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-slate-400">
-                  {sla.compliance}%
+                  {(sla.compliance || 0).toFixed(1)}%
                 </p>
               </div>
             </motion.div>

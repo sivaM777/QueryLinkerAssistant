@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +19,6 @@ import { motion } from "framer-motion";
 
 export default function SLAManagement() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newSLA, setNewSLA] = useState({
@@ -31,42 +28,15 @@ export default function SLAManagement() {
     escalationPolicy: "",
   });
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
 
   const { data: slaTargets, isLoading: targetsLoading } = useQuery({
     queryKey: ["/api/sla/targets"],
-    enabled: isAuthenticated,
-    onError: (error) => {
-      if (isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-    },
+    
   });
 
   const { data: slaStatus } = useQuery({
     queryKey: ["/api/sla/status"],
-    enabled: isAuthenticated,
+    
   });
 
   const addSLAMutation = useMutation({
@@ -176,13 +146,6 @@ export default function SLAManagement() {
     });
   };
 
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   const targets = slaTargets || mockSLATargets;
   const overallCompliance = targets.reduce((acc: number, target: any) => acc + target.compliance, 0) / targets.length;

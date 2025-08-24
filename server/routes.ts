@@ -2,7 +2,6 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
   insertSystemSchema,
   insertSolutionSchema,
@@ -15,191 +14,12 @@ import {
 } from "@shared/schema";
 import { syncService } from './connectors';
 import { syncScheduler } from './scheduler';
-import bcrypt from 'bcryptjs';
-import { nanoid } from 'nanoid';
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Email/Password Authentication Routes
-  app.post('/api/auth/signup', async (req, res) => {
-    try {
-      const { email, password, firstName, lastName } = req.body;
-      
-      if (!email || !password || !firstName || !lastName) {
-        return res.status(400).json({ message: 'All fields are required' });
-      }
-
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists with this email' });
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 12);
-      
-      // Create user
-      const user = await storage.createEmailUser({
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        authProvider: 'email',
-      });
-
-      // Remove password from response
-      const { password: _, ...userResponse } = user;
-      res.status(201).json({ user: userResponse, message: 'Account created successfully' });
-    } catch (error) {
-      console.error('Signup error:', error);
-      res.status(500).json({ message: 'Failed to create account' });
-    }
-  });
-
-  app.post('/api/auth/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
-      }
-
-      // Find user by email
-      const user = await storage.getUserByEmail(email);
-      if (!user || !user.password) {
-        return res.status(401).json({ message: 'Invalid email or password' });
-      }
-
-      // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ message: 'Invalid email or password' });
-      }
-
-      // Update last login
-      await storage.updateUserLastLogin(user.id);
-
-      // Set session
-      (req as any).session.user = {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-        authProvider: 'email',
-      };
-
-      // Remove password from response
-      const { password: _, ...userResponse } = user;
-      res.json({ user: userResponse, message: 'Login successful' });
-    } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ message: 'Login failed' });
-    }
-  });
-
-  app.post('/api/auth/forgot-password', async (req, res) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required' });
-      }
-
-      const user = await storage.getUserByEmail(email);
-      if (!user) {
-        // Don't reveal whether email exists or not
-        return res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
-      }
-
-      // Generate reset token
-      const resetToken = nanoid(32);
-      const resetExpires = new Date(Date.now() + 3600000); // 1 hour from now
-      
-      await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
-      
-      // In a real app, you'd send an email here
-      console.log(`Password reset token for ${email}: ${resetToken}`);
-      
-      res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      res.status(500).json({ message: 'Failed to process password reset request' });
-    }
-  });
-
-  app.post('/api/auth/reset-password', async (req, res) => {
-    try {
-      const { token, newPassword } = req.body;
-      
-      if (!token || !newPassword) {
-        return res.status(400).json({ message: 'Token and new password are required' });
-      }
-
-      const user = await storage.getUserByResetToken(token);
-      if (!user || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
-        return res.status(400).json({ message: 'Invalid or expired reset token' });
-      }
-
-      // Hash new password
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
-      
-      // Update password and clear reset token
-      await storage.updateUserPassword(user.id, hashedPassword);
-      
-      res.json({ message: 'Password reset successful' });
-    } catch (error) {
-      console.error('Reset password error:', error);
-      res.status(500).json({ message: 'Failed to reset password' });
-    }
-  });
-
-  app.post('/api/auth/logout', async (req, res) => {
-    try {
-      (req as any).session.destroy((err: any) => {
-        if (err) {
-          console.error('Session destroy error:', err);
-          return res.status(500).json({ message: 'Failed to logout' });
-        }
-        res.json({ message: 'Logout successful' });
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-      res.status(500).json({ message: 'Failed to logout' });
-    }
-  });
-
-  // Get current user for email auth
-  app.get('/api/auth/me', async (req, res) => {
-    try {
-      const session = (req as any).session;
-      if (!session || !session.user) {
-        return res.status(401).json({ message: 'Not authenticated' });
-      }
-      
-      res.json({ user: session.user });
-    } catch (error) {
-      console.error('Get user error:', error);
-      res.status(500).json({ message: 'Failed to get user' });
-    }
-  });
 
   // Dashboard metrics
-  app.get('/api/dashboard/metrics', isAuthenticated, async (req, res) => {
+  app.get('/api/dashboard/metrics', async (req, res) => {
     try {
       const metrics = await storage.getDashboardMetrics();
       res.json(metrics);
@@ -210,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Systems management
-  app.get('/api/systems', isAuthenticated, async (req, res) => {
+  app.get('/api/systems', async (req, res) => {
     try {
       const systems = await storage.getSystems();
       res.json(systems);
@@ -220,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/systems', isAuthenticated, async (req, res) => {
+  app.post('/api/systems', async (req, res) => {
     try {
       const systemData = insertSystemSchema.parse(req.body);
       const system = await storage.createSystem(systemData);
@@ -231,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/systems/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/systems/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = insertSystemSchema.partial().parse(req.body);
@@ -243,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/systems/:id/sync', isAuthenticated, async (req, res) => {
+  app.post('/api/systems/:id/sync', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.updateSystemSyncTime(id);
@@ -266,7 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Solutions management
-  app.get('/api/solutions', isAuthenticated, async (req, res) => {
+  app.get('/api/solutions', async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
@@ -280,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/solutions/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/solutions/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const solution = await storage.getSolution(id);
@@ -289,14 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Solution not found" });
       }
       
-      // Track interaction
-      const userId = (req as any).user.claims.sub;
-      await storage.createInteraction({
-        userId,
-        solutionId: id,
-        action: 'view',
-        metadata: { timestamp: new Date() }
-      });
+      // Solution view tracking removed (no authentication)
       
       res.json(solution);
     } catch (error) {
@@ -306,26 +119,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI-powered search
-  app.post('/api/search', isAuthenticated, async (req, res) => {
+  app.post('/api/search', async (req, res) => {
     try {
       const { query, systems: systemIds } = req.body;
-      const userId = (req as any).user.claims.sub;
-      
       if (!query || query.trim().length === 0) {
         return res.status(400).json({ message: "Search query is required" });
       }
       
       const solutions = await storage.searchSolutions(query, systemIds);
       
-      // Track search query
-      await storage.createSearchQuery({
-        userId,
-        query: query.trim(),
-        resultsCount: solutions.length,
-        confidence: Math.floor(Math.random() * 20) + 80, // Mock confidence score
-        systemsSearched: systemIds || [],
-        metadata: { timestamp: new Date() }
-      });
+      // Search query tracking removed (no authentication)
       
       res.json({
         query,
@@ -339,20 +142,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/search/recent', isAuthenticated, async (req, res) => {
+  app.get('/api/search/recent', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
-      const limit = parseInt(req.query.limit as string) || 10;
-      
-      const recentSearches = await storage.getRecentSearches(userId, limit);
-      res.json(recentSearches);
+      // Recent searches unavailable without authentication
+      res.json([]);
     } catch (error) {
       console.error("Error fetching recent searches:", error);
       res.status(500).json({ message: "Failed to fetch recent searches" });
     }
   });
 
-  app.get('/api/search/popular', isAuthenticated, async (req, res) => {
+  app.get('/api/search/popular', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const popularSearches = await storage.getPopularSearches(limit);
@@ -364,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SLA management
-  app.get('/api/sla/targets', isAuthenticated, async (req, res) => {
+  app.get('/api/sla/targets', async (req, res) => {
     try {
       const targets = await storage.getSLATargets();
       res.json(targets);
@@ -374,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/sla/status', isAuthenticated, async (req, res) => {
+  app.get('/api/sla/status', async (req, res) => {
     try {
       const status = await storage.getSLAStatus();
       res.json(status);
@@ -385,20 +185,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications
-  app.get('/api/notifications', isAuthenticated, async (req, res) => {
+  app.get('/api/notifications', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
-      const unreadOnly = req.query.unread === 'true';
-      
-      const notifications = await storage.getUserNotifications(userId, unreadOnly);
-      res.json(notifications);
+      // Notifications unavailable without authentication
+      res.json([]);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       res.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
 
-  app.patch('/api/notifications/:id/read', isAuthenticated, async (req, res) => {
+  app.patch('/api/notifications/:id/read', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.markNotificationRead(id);
@@ -415,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics
-  app.get('/api/analytics/popular-solutions', isAuthenticated, async (req, res) => {
+  app.get('/api/analytics/popular-solutions', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const popularSolutions = await storage.getPopularSolutions(limit);
@@ -427,16 +224,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User interactions
-  app.post('/api/interactions', isAuthenticated, async (req, res) => {
+  app.post('/api/interactions', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
-      const interactionData = insertInteractionSchema.parse({
-        ...req.body,
-        userId
-      });
-      
-      const interaction = await storage.createInteraction(interactionData);
-      res.status(201).json(interaction);
+      // User interactions unavailable without authentication
+      res.status(201).json({ message: "Interaction tracking disabled" });
     } catch (error) {
       console.error("Error creating interaction:", error);
       res.status(500).json({ message: "Failed to create interaction" });
@@ -444,7 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Data sources management
-  app.get('/api/data-sources', isAuthenticated, async (req, res) => {
+  app.get('/api/data-sources', async (req, res) => {
     try {
       const dataSources = await storage.getDataSources();
       res.json(dataSources);
@@ -454,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/data-sources', isAuthenticated, async (req, res) => {
+  app.post('/api/data-sources', async (req, res) => {
     try {
       const dataSourceData = insertDataSourceSchema.parse(req.body);
       const dataSource = await storage.createDataSource(dataSourceData);
@@ -465,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/data-sources/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/data-sources/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = insertDataSourceSchema.partial().parse(req.body);
@@ -477,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/data-sources/:id/sync', isAuthenticated, async (req, res) => {
+  app.post('/api/data-sources/:id/sync', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const dataSource = await storage.getDataSource(id);
@@ -507,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Incidents management
-  app.get('/api/incidents', isAuthenticated, async (req, res) => {
+  app.get('/api/incidents', async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
@@ -521,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/incidents/active', isAuthenticated, async (req, res) => {
+  app.get('/api/incidents/active', async (req, res) => {
     try {
       const incidents = await storage.getActiveIncidents();
       res.json(incidents);
@@ -531,7 +322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/incidents/status/:status', isAuthenticated, async (req, res) => {
+  app.get('/api/incidents/status/:status', async (req, res) => {
     try {
       const { status } = req.params;
       const incidents = await storage.getIncidentsByStatus(status);
@@ -542,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/incidents/severity/:severity', isAuthenticated, async (req, res) => {
+  app.get('/api/incidents/severity/:severity', async (req, res) => {
     try {
       const { severity } = req.params;
       const incidents = await storage.getIncidentsBySeverity(severity);
@@ -553,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/incidents/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/incidents/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const incident = await storage.getIncident(id);
@@ -570,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/incidents/:id/updates', isAuthenticated, async (req, res) => {
+  app.get('/api/incidents/:id/updates', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = await storage.getIncidentUpdates(id);
@@ -582,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Service components
-  app.get('/api/service-components', isAuthenticated, async (req, res) => {
+  app.get('/api/service-components', async (req, res) => {
     try {
       const dataSourceId = req.query.dataSourceId ? parseInt(req.query.dataSourceId as string) : undefined;
       const components = await storage.getServiceComponents(dataSourceId);
@@ -594,7 +385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Incident metrics and analytics
-  app.get('/api/incident-metrics', isAuthenticated, async (req, res) => {
+  app.get('/api/incident-metrics', async (req, res) => {
     try {
       const dataSourceId = req.query.dataSourceId ? parseInt(req.query.dataSourceId as string) : undefined;
       const days = req.query.days ? parseInt(req.query.days as string) : 30;
@@ -607,7 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Trigger manual sync of all data sources
-  app.post('/api/sync/all', isAuthenticated, async (req, res) => {
+  app.post('/api/sync/all', async (req, res) => {
     try {
       // Run sync in background
       syncService.syncAllDataSources().catch(error => {

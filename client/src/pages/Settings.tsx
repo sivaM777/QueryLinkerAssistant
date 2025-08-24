@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +19,6 @@ import { useTheme } from "@/components/ThemeProvider";
 
 export default function Settings() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
   
@@ -58,20 +55,6 @@ export default function Settings() {
     enableRealTimeUpdates: true,
   });
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
 
   const saveSettingsMutation = useMutation({
     mutationFn: async (settings: any) => {
@@ -98,13 +81,6 @@ export default function Settings() {
     saveSettingsMutation.mutate({ type: settingsType, settings });
   };
 
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 space-y-6 animate-fadeIn" data-testid="settings-page">

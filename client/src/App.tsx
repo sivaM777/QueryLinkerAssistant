@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Analytics from "@/pages/Analytics";
@@ -13,7 +12,6 @@ import SLAManagement from "@/pages/SLAManagement";
 import KnowledgeBase from "@/pages/KnowledgeBase";
 import Settings from "@/pages/Settings";
 import Landing from "@/pages/Landing";
-import Login from "@/pages/Login";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
 import { useState } from "react";
@@ -21,26 +19,6 @@ import SearchModal from "@/components/SearchModal";
 import FloatingActionButton from "@/components/FloatingActionButton";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-slate-400">Loading...</p>
-      </div>
-    </div>;
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/login" component={Login} />
-        <Route path="*" component={Landing} />
-      </Switch>
-    );
-  }
-
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
@@ -55,6 +33,7 @@ function Router() {
           <Route path="/sla" component={SLAManagement} />
           <Route path="/knowledge" component={KnowledgeBase} />
           <Route path="/settings" component={Settings} />
+          <Route path="/landing" component={Landing} />
           <Route component={NotFound} />
         </Switch>
       </main>
