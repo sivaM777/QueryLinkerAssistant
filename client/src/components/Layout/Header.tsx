@@ -14,6 +14,7 @@ interface HeaderProps {
 
 export default function Header({ onSearchOpen }: HeaderProps = {}) {
   const { isDark, setTheme } = useTheme();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: notifications } = useQuery({
