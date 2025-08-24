@@ -48,9 +48,12 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
         description: "Welcome back!",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       onClose();
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
+      // Wait a moment for auth state to update, then redirect
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 100);
     },
     onError: (error: any) => {
       toast({
