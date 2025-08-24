@@ -89,6 +89,15 @@ export default function Sidebar() {
                 User
               </p>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1"
+              data-testid="logout-button"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
