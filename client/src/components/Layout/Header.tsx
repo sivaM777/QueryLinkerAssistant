@@ -73,7 +73,7 @@ export default function Header() {
               data-testid="notifications-button"
             >
               <Bell className="h-5 w-5" />
-              {notifications && notifications.length > 0 && (
+              {notifications && Array.isArray(notifications) && notifications.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
               )}
             </Button>

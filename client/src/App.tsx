@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,6 +21,15 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 
 function Router() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [location] = useLocation();
+
+  // Check if current route should show the dashboard layout
+  const isDashboardRoute = location !== "/landing";
+
+  if (!isDashboardRoute) {
+    // Render landing page without dashboard layout
+    return <Landing />;
+  }
 
   return (
     <SidebarProvider>
@@ -35,7 +44,6 @@ function Router() {
             <Route path="/sla" component={SLAManagement} />
             <Route path="/knowledge" component={KnowledgeBase} />
             <Route path="/settings" component={Settings} />
-            <Route path="/landing" component={Landing} />
             <Route component={NotFound} />
           </Switch>
         </main>
