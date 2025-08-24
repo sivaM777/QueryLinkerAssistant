@@ -50,7 +50,7 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       onClose();
       // Redirect to dashboard
-      window.location.href = '/';
+      window.location.href = '/dashboard';
     },
     onError: (error: any) => {
       toast({
