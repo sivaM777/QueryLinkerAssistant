@@ -1,0 +1,286 @@
+QueryLinker App: PostgreSQL & Modern UI Adaptation
+🏗️ Core Modern Architecture
+Frontend: React 18 + TypeScript + Vite + Tailwind CSS + Radix UI
+
+Backend: Express.js + TypeScript
+
+Database: PostgreSQL (replacing SQLite) with node-postgres (pg) or Prisma ORM
+
+Styling/UI: Tailwind CSS + Radix UI components with advanced accessibility and theme support
+
+Authentication: JWT-based with Google OAuth SSO (passport.js or custom OAuth & JWT implementation)
+
+Real-time: WebSocket via ws or socket.io for live notifications and updates
+
+🎯 Primary Features (Unchanged)
+AI-Powered Search Engine
+
+Multi-source search (Jira, Confluence, GitHub, ServiceNow KB) with ML ranking
+
+Real-time syncing, contextual AI suggestions, solution caching with TTL
+
+Dashboard & Analytics
+
+Live metrics & charts (using Recharts)
+
+Exportable reports (PDF via jsPDF, Excel CSV)
+
+Business Intelligence integration
+
+System Integrations
+
+Jira Cloud, Confluence, GitHub, ServiceNow API integrations with OAuth
+
+Configurable sync intervals, dynamic connection management
+
+SLA Management System
+
+SLA tracking, breach alerts, escalation workflows
+
+Email/Slack/MS Teams/Webhook alerting
+
+Scheduled reporting with professional PDF formatting
+
+User Management & Authentication
+
+JWT and refresh tokens
+
+Google SSO OAuth
+
+Role-based access, session management, password reset
+
+Real-time Solution Database
+
+Automated sync from integrated systems
+
+Full-text search on PostgreSQL with advanced solution metadata
+
+Interaction tracking & analytics
+
+🎨 UI/UX Design Enhancements
+Modern Dark/Light themes leveraging Tailwind CSS and CSS variables with smooth transitions
+
+System preference detection and toggle UI
+
+Responsive mobile-first layout with advanced Radix UI components for accessibility
+
+Glassmorphism effects with subtle backdrop-filter blur
+
+Gradient branding (bg-ql-gradient) for cohesive look
+
+Consistent color schemes per system integration (Jira - Orange/Red, Confluence - Blue, GitHub - Dark, ServiceNow - Teal)
+
+Key pages:
+
+Landing Dashboard with powerful search UI and stats
+
+Analytics with interactive Recharts visualization
+
+SLA management and monitoring page
+
+Knowledge base help center with advanced search
+
+Settings and integrations management
+
+Detailed Solution pages with rich navigation
+
+🔧 Backend Technical Implementation (PostgreSQL-focused)
+Services to implement (TypeScript):
+AuthenticationService (JWT + OAuth with Passport/google-auth-lib)
+
+SolutionSyncService (periodic sync from external systems; scalable to handle concurrency)
+
+MLRankingEngine (AI ranking, suggestions)
+
+CacheService (caching with Redis or PostgreSQL extensions)
+
+InteractionService (user event/activity tracking)
+
+EmailService (SMTP via Nodemailer with templates)
+
+NotificationService (WebSockets for real-time alerts)
+
+BIIntegrationService (export & external BI data handlers)
+
+Database Schema (PostgreSQL)
+sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255),
+  name VARCHAR(255),
+  avatar_url TEXT,
+  role VARCHAR(50) NOT NULL,
+  google_oauth_id VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE user_sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  refresh_token TEXT,
+  last_active TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE systems (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  config JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE solutions (
+  id SERIAL PRIMARY KEY,
+  system_id INT REFERENCES systems(id),
+  external_id VARCHAR(255),
+  title TEXT NOT NULL,
+  content TEXT,
+  metadata JSONB,
+  url TEXT,
+  synced_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FULLTEXT INDEX on (title, content) -- use PostgreSQL pg_trgm or tsvector for full-text search
+);
+
+CREATE TABLE interactions (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  solution_id INT REFERENCES solutions(id),
+  action VARCHAR(100),
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE sla_targets (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255),
+  threshold INTERVAL,
+  escalation_policy JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE system_configurations (
+  id SERIAL PRIMARY KEY,
+  system_id INT REFERENCES systems(id),
+  oauth_credentials JSONB,
+  sync_interval INT -- in minutes
+);
+
+CREATE TABLE cache_entries (
+  id SERIAL PRIMARY KEY,
+  key VARCHAR(255) UNIQUE NOT NULL,
+  value JSONB,
+  ttl TIMESTAMPTZ
+);
+
+CREATE TABLE notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  type VARCHAR(100),
+  content JSONB,
+  read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+API Endpoints (Express.js + TypeScript)
+Authentication
+POST /api/auth/login — email/password login
+
+POST /api/auth/register — user signup
+
+POST /api/auth/google-oauth — Google SSO login
+
+POST /api/auth/reset-password — initiates password reset
+
+Search & Solutions
+POST /api/querylinker/search — basic multi-system search
+
+POST /api/querylinker/enhanced-search — AI contextual search with ML ranking
+
+GET /api/querylinker/solution/:id — get solution details
+
+POST /api/querylinker/link — link tickets or solutions
+
+Analytics & Reporting
+GET /api/querylinker/analytics — fetch metrics and charts data
+
+GET /api/querylinker/sla-data — SLA monitoring data
+
+POST /api/querylinker/sla-report — generate SLA PDF/Excel reports
+
+System Management
+GET /api/querylinker/sync-status — current sync status
+
+POST /api/querylinker/trigger-sync — manually trigger data sync
+
+GET /api/querylinker/active-users — get currently active users
+
+📦 Recommended Dependencies
+Frontend
+json
+{
+  "react": "^18.2.0",
+  "typescript": "^5.0.0",
+  "vite": "^5.0.0",
+  "tailwindcss": "^3.4.0",
+  "@radix-ui/react-accordion": "latest",
+  "@radix-ui/react-dialog": "latest",
+  "@radix-ui/react-dropdown-menu": "latest",
+  "react-router-dom": "^6.0.0",
+  "recharts": "^2.8.0",
+  "jspdf": "^2.5.0",
+  "jspdf-autotable": "^3.6.0",
+  "lucide-react": "^0.294.0",
+  "axios": "^1.6.0"
+}
+Backend
+json
+{
+  "express": "^4.18.0",
+  "pg": "^8.10.0",
+  "jsonwebtoken": "^9.0.0",
+  "bcryptjs": "^2.4.0",
+  "nodemailer": "^6.9.0",
+  "cors": "^2.8.0",
+  "axios": "^1.6.0",
+  "passport": "^0.6.0",
+  "passport-google-oauth20": "^2.0.0",
+  "ws": "^8.13.0" // or socket.io if preferred
+}
+🚀 Advanced Features & Considerations
+ML components: Suggestion ranking, personalization, automatic model retraining pipelines
+
+Real-time: WebSocket live updates for dashboard, notifications, note collaboration
+
+Export: High-quality PDF reports with jsPDF, Excel exports
+
+Performance: Intelligent cache invalidation (Redis optional), PostgreSQL full-text search with indexes
+
+Security: Secure JWT flows with refresh tokens, parameterized queries, CORS config, rate limiting, secure session management
+
+🔒 Security & Privacy
+Use environment variables securely for credentials
+
+SQL injection prevention with prepared statements
+
+Input validation and sanitization on backend and frontend
+
+CORS policy restricting API access
+
+Rate limiting endpoints to prevent abuse
+
+Secure cookie/session and JWT storage best practices
+
+🎯 Deployment & DevOps Recommendations
+Dockerize both backend and frontend with multi-stage builds
+
+Use environment-based config for dev/staging/prod
+
+Health check endpoints for readiness/liveness probes
+
+Centralized logging (e.g. Winston, or external service)
+
+CI/CD pipelines for automated testing, linting, building, and deployment
+
+Backups for PostgreSQL, scheduled DB maintenance scripts
