@@ -77,17 +77,43 @@ function SidebarContent() {
 
       <nav className="mt-6 px-4 space-y-2">
         {navigation.map((item) => {
-          const isActive = location === item.href;
+          const isActive = location === item.href && !item.isSearchTrigger;
           const Icon = item.icon;
-          
+
+          if (item.isSearchTrigger) {
+            return (
+              <Button
+                key={item.name}
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start group transition-all duration-200",
+                  "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                )}
+                onClick={() => setIsSearchOpen(true)}
+                data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                <Icon className={cn(
+                  "mr-3 h-4 w-4 transition-transform",
+                  "text-gray-400 group-hover:text-primary group-hover:scale-110"
+                )} />
+                <span className="font-medium">{item.name}</span>
+                {item.badge && (
+                  <Badge className="ml-auto bg-primary text-primary-foreground">
+                    {item.badge}
+                  </Badge>
+                )}
+              </Button>
+            );
+          }
+
           return (
             <Link key={item.name} href={item.href}>
               <Button
                 variant={isActive ? "default" : "ghost"}
                 className={cn(
                   "w-full justify-start group transition-all duration-200",
-                  isActive 
-                    ? "bg-primary text-primary-foreground" 
+                  isActive
+                    ? "bg-primary text-primary-foreground"
                     : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700",
                   item.isSystemFeature && "border border-primary/20 bg-primary/5"
                 )}
