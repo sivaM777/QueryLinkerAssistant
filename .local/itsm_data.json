@@ -1,0 +1,106 @@
+{
+  "users": [],
+  "usersByEmail": [],
+  "systems": [
+    {
+      "id": 1,
+      "name": "Jira Service Management",
+      "type": "ticketing",
+      "config": {
+        "baseUrl": "https://your-domain.atlassian.net",
+        "authType": "oauth",
+        "syncInterval": 300,
+        "description": "Primary ticketing and incident management system"
+      },
+      "isActive": true,
+      "createdAt": "2025-08-24T11:02:45.104Z",
+      "updatedAt": "2025-08-24T11:02:45.104Z",
+      "lastSyncAt": null
+    },
+    {
+      "id": 2,
+      "name": "Confluence Knowledge Base",
+      "type": "knowledge",
+      "config": {
+        "baseUrl": "https://your-domain.atlassian.net/wiki",
+        "authType": "oauth",
+        "syncInterval": 600,
+        "description": "Internal documentation and knowledge base"
+      },
+      "isActive": true,
+      "createdAt": "2025-08-24T11:02:45.104Z",
+      "updatedAt": "2025-08-24T11:02:45.104Z",
+      "lastSyncAt": null
+    },
+    {
+      "id": 3,
+      "name": "GitHub Repository",
+      "type": "repository",
+      "config": {
+        "baseUrl": "https://api.github.com",
+        "authType": "token",
+        "syncInterval": 900,
+        "description": "Source code and technical documentation"
+      },
+      "isActive": true,
+      "createdAt": "2025-08-24T11:02:45.104Z",
+      "updatedAt": "2025-08-24T11:02:45.104Z",
+      "lastSyncAt": null
+    }
+  ],
+  "solutions": [],
+  "interactions": [],
+  "slaTargets": [
+    {
+      "id": 4,
+      "name": "Critical Issue Response",
+      "type": "response_time",
+      "threshold": "15 minutes",
+      "isActive": true,
+      "escalationPolicy": {
+        "levels": [
+          {
+            "delay": 15,
+            "action": "notify_team_lead"
+          },
+          {
+            "delay": 30,
+            "action": "notify_manager"
+          }
+        ]
+      },
+      "createdAt": "2025-08-24T11:02:45.104Z",
+      "updatedAt": "2025-08-24T11:02:45.104Z"
+    },
+    {
+      "id": 5,
+      "name": "High Priority Resolution",
+      "type": "resolution_time",
+      "threshold": "4 hours",
+      "isActive": true,
+      "escalationPolicy": {
+        "levels": [
+          {
+            "delay": 240,
+            "action": "notify_senior_team"
+          },
+          {
+            "delay": 480,
+            "action": "notify_director"
+          }
+        ]
+      },
+      "createdAt": "2025-08-24T11:02:45.104Z",
+      "updatedAt": "2025-08-24T11:02:45.104Z"
+    }
+  ],
+  "slaRecords": [],
+  "notifications": [],
+  "searchQueries": [],
+  "dataSources": [],
+  "incidents": [],
+  "incidentUpdates": [],
+  "serviceComponents": [],
+  "incidentMetrics": [],
+  "idCounter": 6
+}
