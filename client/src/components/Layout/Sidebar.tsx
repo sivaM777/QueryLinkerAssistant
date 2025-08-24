@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useSystemFeatures } from "@/hooks/useSystemFeatures";
+import SearchModal from "@/components/SearchModal";
 
 const baseNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard, badge: "5" },
