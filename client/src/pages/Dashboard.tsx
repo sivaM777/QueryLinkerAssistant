@@ -53,33 +53,33 @@ export default function Dashboard() {
 
 
   return (
-    <div className="space-y-6 animate-fadeIn" data-testid="dashboard-page">
-      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
+    <div className="min-h-screen space-y-6 animate-fadeIn" data-testid="dashboard-page">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 lg:px-6 py-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-            <p className="text-gray-600 dark:text-slate-400">IT Service Management Overview</p>
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p className="text-sm lg:text-base text-gray-600 dark:text-slate-400">IT Service Management Overview</p>
           </div>
         </div>
       </div>
-      
-      <div className="p-6">
+
+      <div className="p-4 lg:p-6 space-y-6">
         <MetricsCards metrics={enhancedMetrics as any} isLoading={metricsLoading} />
-      
-      <ActiveIncidents />
-      
-      <SystemIntegrationsGrid />
-      
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <ActiveIncidents />
+
+        <SystemIntegrationsGrid />
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <RecentSearches onSearchOpen={(query) => {
             setIsSearchOpen(true);
             // Pass the query to search modal if needed
           }} />
           <SLAStatus />
         </div>
-        
+
         <QuickActions />
-        
+
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <RecentActivity />
           <SystemFeaturesPanel />
