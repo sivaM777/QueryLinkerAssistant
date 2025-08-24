@@ -52,9 +52,9 @@ export default function EmailPasswordModal({ isOpen, onClose }: EmailPasswordMod
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       onClose();
-      // Wait a moment for auth state to update, then redirect
+      // Navigate to dashboard using wouter
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        setLocation('/');
       }, 100);
     },
     onError: (error: any) => {
