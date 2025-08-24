@@ -1,15 +1,29 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FaApple, FaGoogle } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
 import { Link2Icon } from "lucide-react";
+import EmailPasswordModal from "@/components/EmailPasswordModal";
 
-const handleLogin = () => {
+const handleGoogleLogin = () => {
+  // Redirect to Google OAuth
+  window.location.href = "https://accounts.google.com/oauth/authorize?client_id=YOUR_GOOGLE_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&response_type=code&scope=openid email profile";
+};
+
+const handleAppleLogin = () => {
+  // Redirect to Apple OAuth
+  window.location.href = "https://appleid.apple.com/auth/authorize?client_id=YOUR_APPLE_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&response_type=code&scope=name email";
+};
+
+const handleSSOLogin = () => {
+  // Keep existing Replit Auth for SSO
   window.location.href = "/api/login";
 };
 
 export default function Login() {
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -40,7 +54,7 @@ export default function Login() {
               variant="outline"
               size="lg"
               className="w-full h-12 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600 transition-colors"
-              onClick={handleLogin}
+              onClick={handleGoogleLogin}
               data-testid="continue-google"
             >
               <FaGoogle className="w-5 h-5 mr-3 text-red-500" />
@@ -51,23 +65,13 @@ export default function Login() {
               variant="outline"
               size="lg"
               className="w-full h-12 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600 transition-colors"
-              onClick={handleLogin}
+              onClick={handleAppleLogin}
               data-testid="continue-apple"
             >
               <FaApple className="w-5 h-5 mr-3 text-gray-700 dark:text-gray-200" />
               <span className="text-gray-700 dark:text-gray-200 font-medium">Continue with Apple</span>
             </Button>
 
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full h-12 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600 transition-colors"
-              onClick={handleLogin}
-              data-testid="continue-twitter"
-            >
-              <FaXTwitter className="w-5 h-5 mr-3 text-gray-700 dark:text-gray-200" />
-              <span className="text-gray-700 dark:text-gray-200 font-medium">Continue with X</span>
-            </Button>
 
             {/* Divider */}
             <div className="relative py-4">
@@ -84,7 +88,7 @@ export default function Login() {
               variant="outline"
               size="lg"
               className="w-full h-12 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600 transition-colors"
-              onClick={handleLogin}
+              onClick={() => setIsEmailModalOpen(true)}
               data-testid="email-password"
             >
               <span className="text-gray-700 dark:text-gray-200 font-medium">📧 Email & password</span>
@@ -104,7 +108,7 @@ export default function Login() {
               variant="outline"
               size="lg"
               className="w-full h-12 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 border-gray-200 dark:border-slate-600 transition-colors"
-              onClick={handleLogin}
+              onClick={handleSSOLogin}
               data-testid="sso-option"
             >
               <span className="text-gray-700 dark:text-gray-200 font-medium">🔗 Single sign-on (SSO)</span>
@@ -129,7 +133,7 @@ export default function Login() {
               <p className="text-sm text-gray-600 dark:text-slate-400">
                 Already have an account?{" "}
                 <button 
-                  onClick={handleLogin}
+                  onClick={() => setIsEmailModalOpen(true)}
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   data-testid="log-in-link"
                 >
@@ -146,6 +150,12 @@ export default function Login() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Email Password Modal */}
+        <EmailPasswordModal 
+          isOpen={isEmailModalOpen} 
+          onClose={() => setIsEmailModalOpen(false)} 
+        />
 
         {/* Footer Note */}
         <div className="text-center mt-6">
