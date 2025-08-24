@@ -230,7 +230,7 @@ export default function KnowledgeBase() {
                     <SelectValue placeholder="Select related system" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No system</SelectItem>
+                    <SelectItem value="none">No system</SelectItem>
                     <SelectItem value="1">Jira</SelectItem>
                     <SelectItem value="2">Confluence</SelectItem>
                     <SelectItem value="3">GitHub</SelectItem>
