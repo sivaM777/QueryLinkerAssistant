@@ -26,7 +26,7 @@ export default function KnowledgeBase() {
     title: "",
     content: "",
     tags: "",
-    systemId: "",
+    systemId: "none",
   });
 
 
