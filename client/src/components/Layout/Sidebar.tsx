@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useSidebar } from "@/components/ui/sidebar";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Search,
@@ -23,11 +26,18 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export default function Sidebar() {
+function SidebarContent() {
   const [location] = useLocation();
 
+  const handleLogout = () => {
+    // Clear any stored data and reload
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = '/';
+  };
+
   return (
-    <aside className="w-64 bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300">
+    <div className="w-64 bg-white dark:bg-slate-800 shadow-xl h-full flex flex-col">
       <div className="p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center">
@@ -92,15 +102,36 @@ export default function Sidebar() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => window.location.reload()}
+              onClick={handleLogout}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1"
               data-testid="logout-button"
+              title="Logout"
             >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function Sidebar() {
+  const { isMobile, openMobile, setOpenMobile } = useSidebar();
+
+  if (isMobile) {
+    return (
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+        <SheetContent side="left" className="p-0 w-64">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <aside className="w-64 bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300">
+      <SidebarContent />
     </aside>
   );
 }

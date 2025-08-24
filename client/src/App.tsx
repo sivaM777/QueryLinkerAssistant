@@ -17,29 +17,32 @@ import Header from "@/components/Layout/Header";
 import { useState } from "react";
 import SearchModal from "@/components/SearchModal";
 import FloatingActionButton from "@/components/FloatingActionButton";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 function Router() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
-      <Sidebar />
-      <main className="flex-1 ml-64">
-        <Header />
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/analytics" component={Analytics} />
-          <Route path="/integrations" component={SystemIntegrations} />
-          <Route path="/sla" component={SLAManagement} />
-          <Route path="/knowledge" component={KnowledgeBase} />
-          <Route path="/settings" component={Settings} />
-          <Route path="/landing" component={Landing} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-      <FloatingActionButton />
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+        <Sidebar />
+        <main className="flex-1 lg:ml-64 transition-all duration-300">
+          <Header />
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/analytics" component={Analytics} />
+            <Route path="/integrations" component={SystemIntegrations} />
+            <Route path="/sla" component={SLAManagement} />
+            <Route path="/knowledge" component={KnowledgeBase} />
+            <Route path="/settings" component={Settings} />
+            <Route path="/landing" component={Landing} />
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+        <FloatingActionButton />
+      </div>
+    </SidebarProvider>
   );
 }
 
