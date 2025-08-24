@@ -186,6 +186,8 @@ function SidebarContent() {
           </div>
         </div>
       </div>
+
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
   );
 }
