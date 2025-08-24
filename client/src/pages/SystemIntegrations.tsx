@@ -65,61 +65,87 @@ export default function SystemIntegrations() {
     },
   });
 
-  // Mock system configurations
-  const systemConfigs = [
-    {
-      id: 1,
-      name: "Jira Cloud",
-      type: "jira",
-      icon: "🎯",
-      color: "orange",
-      description: "Issue tracking and project management",
-      recordCount: "1,254 records",
-      lastSync: "2 mins ago",
-      syncProgress: 85,
-      status: "Connected",
-      isActive: true,
+  const deleteSystemMutation = useMutation({
+    mutationFn: async (systemId: number) => {
+      await apiRequest("DELETE", `/api/systems/${systemId}`);
     },
-    {
-      id: 2,
-      name: "Confluence",
-      type: "confluence",
-      icon: "📚",
-      color: "blue",
-      description: "Knowledge base and documentation",
-      recordCount: "892 records",
-      lastSync: "5 mins ago",
-      syncProgress: 92,
-      status: "Connected",
-      isActive: true,
+    onSuccess: () => {
+      toast({
+        title: "System Removed",
+        description: "System integration removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/systems"] });
     },
-    {
-      id: 3,
-      name: "GitHub",
-      type: "github",
-      icon: "💻",
+    onError: (error) => {
+      toast({
+        title: "Failed to Remove System",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // System type configurations for display
+  const getSystemConfig = (system: any) => {
+    const configs = {
+      jira: {
+        icon: "🎯",
+        color: "orange",
+        description: "Issue tracking and project management",
+      },
+      confluence: {
+        icon: "📚",
+        color: "blue",
+        description: "Knowledge base and documentation",
+      },
+      github: {
+        icon: "💻",
+        color: "gray",
+        description: "Code repository and issues",
+      },
+      servicenow: {
+        icon: "☁️",
+        color: "teal",
+        description: "IT service management platform",
+      },
+      slack: {
+        icon: "💬",
+        color: "purple",
+        description: "Team communication and collaboration",
+      },
+      teams: {
+        icon: "💬",
+        color: "blue",
+        description: "Microsoft Teams communication",
+      },
+      zendesk: {
+        icon: "📋",
+        color: "green",
+        description: "Customer support and ticketing",
+      },
+      linear: {
+        icon: "📋",
+        color: "purple",
+        description: "Issue tracking and project management",
+      },
+      notion: {
+        icon: "📝",
+        color: "gray",
+        description: "Documentation and knowledge management",
+      },
+      "servicenow-itsm": {
+        icon: "📋",
+        color: "teal",
+        description: "IT service management platform",
+      },
+    };
+    
+    return configs[system.type as keyof typeof configs] || {
+      icon: "🔧",
       color: "gray",
-      description: "Code repository and issues",
-      recordCount: "2,341 records",
-      lastSync: "1 min ago",
-      syncProgress: 78,
-      status: "Connected",
-      isActive: true,
-    },
-    {
-      id: 4,
-      name: "ServiceNow KB",
-      type: "servicenow",
-      icon: "☁️",
-      color: "teal",
-      description: "IT service management platform",
-      recordCount: "829 records",
-      lastSync: "Just now",
-      syncProgress: 95,
-      status: "Connected",
-      isActive: true,
-    },
-  ];
+      description: "Custom integration",
+    };
+  };
 
   const availableSystems = [
     { value: "slack", label: "Slack", icon: "💬" },
@@ -244,7 +270,9 @@ export default function SystemIntegrations() {
             </Card>
           ))
         ) : (
-          systemConfigs.map((system, index) => (
+          (systems || []).map((system: any, index: number) => {
+            const config = getSystemConfig(system);
+            return (
             <motion.div
               key={system.id}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -258,11 +286,11 @@ export default function SystemIntegrations() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="text-2xl">{system.icon}</div>
+                      <div className="text-2xl">{config.icon}</div>
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-white">{system.name}</h3>
                         <p className="text-xs text-gray-500 dark:text-slate-400">
-                          Last sync: {system.lastSync}
+                          Last sync: {system.lastSyncAt ? new Date(system.lastSyncAt).toLocaleString() : 'Never'}
                         </p>
                       </div>
                     </div>
@@ -270,28 +298,26 @@ export default function SystemIntegrations() {
                       variant={system.isActive ? "default" : "secondary"}
                       className={system.isActive ? "bg-green-500 hover:bg-green-500" : ""}
                     >
-                      {system.status}
+                      {system.isActive ? "Connected" : "Disconnected"}
                     </Badge>
                   </div>
 
                   <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
-                    {system.description}
+                    {config.description}
                   </p>
 
                   <div className="space-y-3 mb-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 dark:text-slate-400">Records</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {system.recordCount}
+                      <span className="text-gray-500 dark:text-slate-400">Type</span>
+                      <span className="font-medium text-gray-900 dark:text-white capitalize">
+                        {system.type}
                       </span>
                     </div>
-                    <Progress 
-                      value={system.syncProgress} 
-                      className="h-2"
-                      data-testid={`sync-progress-${system.type}`}
-                    />
-                    <div className="text-xs text-gray-500 dark:text-slate-400 text-right">
-                      {system.syncProgress}% synced
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500 dark:text-slate-400">Status</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {system.isActive ? "Active" : "Inactive"}
+                      </span>
                     </div>
                   </div>
 
@@ -319,6 +345,12 @@ export default function SystemIntegrations() {
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to remove ${system.name}? All associated solutions will be deleted.`)) {
+                            deleteSystemMutation.mutate(system.id);
+                          }
+                        }}
+                        disabled={deleteSystemMutation.isPending}
                         data-testid={`delete-button-${system.type}`}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -328,7 +360,8 @@ export default function SystemIntegrations() {
                 </CardContent>
               </Card>
             </motion.div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -343,14 +376,18 @@ export default function SystemIntegrations() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400">4</div>
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                {systems?.filter((s: any) => s.isActive).length || 0}
+              </div>
               <div className="text-sm text-gray-500 dark:text-slate-400 mt-1">Connected Systems</div>
               <div className="text-xs text-gray-400 mt-1">All operational</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">5,316</div>
-              <div className="text-sm text-gray-500 dark:text-slate-400 mt-1">Total Records</div>
-              <div className="text-xs text-gray-400 mt-1">Last 24h: +247</div>
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {systems?.length || 0}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-slate-400 mt-1">Total Systems</div>
+              <div className="text-xs text-gray-400 mt-1">Active & Inactive</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">98.7%</div>

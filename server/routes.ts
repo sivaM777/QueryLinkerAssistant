@@ -63,10 +63,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/systems/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // First delete all solutions from this system
+      await storage.deleteSolutionsBySystem(id);
+      
+      // Then delete the system
+      const deleted = await storage.deleteSystem(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "System not found" });
+      }
+      
+      // Broadcast system removal via WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'system_removed',
+            data: { systemId: id, timestamp: new Date() }
+          }));
+        }
+      });
+      
+      res.json({ message: "System deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting system:", error);
+      res.status(500).json({ message: "Failed to delete system" });
+    }
+  });
+
   app.post('/api/systems/:id/sync', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const system = await storage.getSystem(id);
+      
+      if (!system) {
+        return res.status(404).json({ message: "System not found" });
+      }
+      
+      // Update sync time
       await storage.updateSystemSyncTime(id);
+      
+      // Create mock solutions based on system type
+      await storage.createMockSolutionsForSystem(system);
       
       // Broadcast sync update via WebSocket
       wss.clients.forEach((client) => {

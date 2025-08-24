@@ -342,6 +342,211 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
+  async deleteSolutionsBySystem(systemId: number): Promise<boolean> {
+    const result = await db.delete(solutions).where(eq(solutions.systemId, systemId));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async createMockSolutionsForSystem(system: System): Promise<void> {
+    const mockSolutions = this.generateMockSolutionsForSystemType(system);
+    
+    for (const solution of mockSolutions) {
+      // Check if solution already exists to avoid duplicates
+      const existing = await db
+        .select()
+        .from(solutions)
+        .where(
+          and(
+            eq(solutions.systemId, system.id),
+            eq(solutions.externalId, solution.externalId!)
+          )
+        );
+      
+      if (existing.length === 0) {
+        await db.insert(solutions).values(solution);
+      }
+    }
+  }
+
+  private generateMockSolutionsForSystemType(system: System): InsertSolution[] {
+    const baseSolutions = {
+      jira: [
+        {
+          systemId: system.id,
+          externalId: `JIRA-${Math.floor(Math.random() * 1000)}`,
+          title: "How to configure Jira automation rules",
+          content: "Step-by-step guide to setting up automation in Jira for issue management and workflow optimization.",
+          url: `https://example-jira.atlassian.net/browse/HELP-${Math.floor(Math.random() * 100)}`,
+          tags: ["jira", "automation", "workflow"],
+          status: "active",
+        },
+        {
+          systemId: system.id,
+          externalId: `JIRA-${Math.floor(Math.random() * 1000)}`,
+          title: "Jira permissions and user management",
+          content: "Complete guide on managing user permissions, groups, and project access in Jira.",
+          url: `https://example-jira.atlassian.net/browse/HELP-${Math.floor(Math.random() * 100)}`,
+          tags: ["jira", "permissions", "users"],
+          status: "active",
+        },
+        {
+          systemId: system.id,
+          externalId: `JIRA-${Math.floor(Math.random() * 1000)}`,
+          title: "Custom fields and issue types setup",
+          content: "How to create and configure custom fields and issue types for your Jira projects.",
+          url: `https://example-jira.atlassian.net/browse/HELP-${Math.floor(Math.random() * 100)}`,
+          tags: ["jira", "customization", "fields"],
+          status: "active",
+        },
+      ],
+      confluence: [
+        {
+          systemId: system.id,
+          externalId: `CONF-${Math.floor(Math.random() * 1000)}`,
+          title: "Confluence page templates and formatting",
+          content: "Best practices for creating professional page templates and formatting content in Confluence.",
+          url: `https://example.atlassian.net/wiki/spaces/HELP/pages/${Math.floor(Math.random() * 10000)}`,
+          tags: ["confluence", "templates", "formatting"],
+          status: "active",
+        },
+        {
+          systemId: system.id,
+          externalId: `CONF-${Math.floor(Math.random() * 1000)}`,
+          title: "Space permissions and access control",
+          content: "Managing space permissions and controlling access to Confluence content.",
+          url: `https://example.atlassian.net/wiki/spaces/HELP/pages/${Math.floor(Math.random() * 10000)}`,
+          tags: ["confluence", "permissions", "security"],
+          status: "active",
+        },
+        {
+          systemId: system.id,
+          externalId: `CONF-${Math.floor(Math.random() * 1000)}`,
+          title: "Confluence macros and advanced features",
+          content: "Using macros, labels, and advanced features to enhance your Confluence pages.",
+          url: `https://example.atlassian.net/wiki/spaces/HELP/pages/${Math.floor(Math.random() * 10000)}`,
+          tags: ["confluence", "macros", "advanced"],
+          status: "active",
+        },
+      ],
+      github: [
+        {
+          systemId: system.id,
+          externalId: `GH-${Math.floor(Math.random() * 1000)}`,
+          title: "GitHub Actions workflow setup",
+          content: "Creating and configuring GitHub Actions for CI/CD pipelines and automation.",
+          url: `https://github.com/example/repo/issues/${Math.floor(Math.random() * 100)}`,
+          tags: ["github", "actions", "ci-cd"],
+          status: "active",
+        },
+        {
+          systemId: system.id,
+          externalId: `GH-${Math.floor(Math.random() * 1000)}`,
+          title: "Branch protection and code review",
+          content: "Setting up branch protection rules and implementing effective code review processes.",
+          url: `https://github.com/example/repo/issues/${Math.floor(Math.random() * 100)}`,
+          tags: ["github", "security", "review"],
+          status: "active",
+        },
+        {
+          systemId: system.id,
+          externalId: `GH-${Math.floor(Math.random() * 1000)}`,
+          title: "Issue templates and project management",
+          content: "Creating issue templates and using GitHub Projects for better project organization.",
+          url: `https://github.com/example/repo/issues/${Math.floor(Math.random() * 100)}`,
+          tags: ["github", "issues", "project-management"],
+          status: "active",
+        },
+      ],
+      servicenow: [
+        {
+          systemId: system.id,
+          externalId: `SN-${Math.floor(Math.random() * 1000)}`,
+          title: "ServiceNow incident management workflow",
+          content: "Best practices for incident management and resolution workflows in ServiceNow.",
+          url: `https://example.service-now.com/kb_view.do?sysparm_article=KB${String(Math.floor(Math.random() * 100000)).padStart(7, '0')}`,
+          tags: ["servicenow", "incident", "workflow"],
+          status: "active",
+        },
+        {
+          systemId: system.id,
+          externalId: `SN-${Math.floor(Math.random() * 1000)}`,
+          title: "Change management and approvals",
+          content: "Managing change requests and approval processes in ServiceNow ITSM.",
+          url: `https://example.service-now.com/kb_view.do?sysparm_article=KB${String(Math.floor(Math.random() * 100000)).padStart(7, '0')}`,
+          tags: ["servicenow", "change-management", "approvals"],
+          status: "active",
+        },
+        {
+          systemId: system.id,
+          externalId: `SN-${Math.floor(Math.random() * 1000)}`,
+          title: "ServiceNow catalog and requests",
+          content: "Setting up service catalog items and managing service requests efficiently.",
+          url: `https://example.service-now.com/kb_view.do?sysparm_article=KB${String(Math.floor(Math.random() * 100000)).padStart(7, '0')}`,
+          tags: ["servicenow", "catalog", "requests"],
+          status: "active",
+        },
+      ],
+      slack: [
+        {
+          systemId: system.id,
+          externalId: `SLACK-${Math.floor(Math.random() * 1000)}`,
+          title: "Slack bot configuration and automation",
+          content: "Setting up Slack bots and workflow automations for team productivity.",
+          url: `https://example.slack.com/archives/C${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+          tags: ["slack", "bots", "automation"],
+          status: "active",
+        },
+      ],
+      teams: [
+        {
+          systemId: system.id,
+          externalId: `TEAMS-${Math.floor(Math.random() * 1000)}`,
+          title: "Microsoft Teams integration setup",
+          content: "Configuring Microsoft Teams integrations and managing team communication.",
+          url: `https://teams.microsoft.com/l/entity/${Math.random().toString(36).substr(2, 9)}`,
+          tags: ["teams", "integration", "communication"],
+          status: "active",
+        },
+      ],
+      zendesk: [
+        {
+          systemId: system.id,
+          externalId: `ZD-${Math.floor(Math.random() * 1000)}`,
+          title: "Zendesk ticket management best practices",
+          content: "Optimizing ticket handling and customer support workflows in Zendesk.",
+          url: `https://example.zendesk.com/hc/en-us/articles/${Math.floor(Math.random() * 1000000000)}`,
+          tags: ["zendesk", "tickets", "support"],
+          status: "active",
+        },
+      ],
+      linear: [
+        {
+          systemId: system.id,
+          externalId: `LINEAR-${Math.floor(Math.random() * 1000)}`,
+          title: "Linear project workflow optimization",
+          content: "Setting up efficient project workflows and issue tracking in Linear.",
+          url: `https://linear.app/example/issue/EX-${Math.floor(Math.random() * 100)}`,
+          tags: ["linear", "workflow", "projects"],
+          status: "active",
+        },
+      ],
+      notion: [
+        {
+          systemId: system.id,
+          externalId: `NOTION-${Math.floor(Math.random() * 1000)}`,
+          title: "Notion workspace organization",
+          content: "Best practices for organizing and structuring Notion workspaces for teams.",
+          url: `https://www.notion.so/example/${Math.random().toString(36).substr(2, 9)}`,
+          tags: ["notion", "organization", "workspace"],
+          status: "active",
+        },
+      ],
+    };
+
+    const systemType = system.type.toLowerCase();
+    return baseSolutions[systemType as keyof typeof baseSolutions] || [];
+  }
+
   // Interaction operations
   async getUserInteractions(userId: string, limit = 50): Promise<Interaction[]> {
     return await db

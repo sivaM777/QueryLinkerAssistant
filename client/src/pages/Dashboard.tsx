@@ -11,6 +11,7 @@ import QuickActions from "@/components/Dashboard/QuickActions";
 import RecentActivity from "@/components/Dashboard/RecentActivity";
 import ActiveIncidents from "@/components/Dashboard/ActiveIncidents";
 import SearchModal from "@/components/SearchModal";
+import SystemFeaturesPanel from "@/components/SystemFeatures/SystemFeaturesPanel";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -79,7 +80,10 @@ export default function Dashboard() {
         
         <QuickActions />
         
-        <RecentActivity />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <RecentActivity />
+          <SystemFeaturesPanel />
+        </div>
       </div>
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
