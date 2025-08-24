@@ -279,30 +279,30 @@ export default function SystemIntegrations() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card 
-                className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+              <Card
+                className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1 h-full flex flex-col"
                 data-testid={`system-card-${system.type}`}
               >
-                <CardContent className="p-6">
+                <CardContent className="p-6 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-2xl">{config.icon}</div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{system.name}</h3>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className="text-2xl flex-shrink-0">{config.icon}</div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">{system.name}</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
                           Last sync: {system.lastSyncAt ? new Date(system.lastSyncAt).toLocaleString() : 'Never'}
                         </p>
                       </div>
                     </div>
-                    <Badge 
+                    <Badge
                       variant={system.isActive ? "default" : "secondary"}
-                      className={system.isActive ? "bg-green-500 hover:bg-green-500" : ""}
+                      className={`${system.isActive ? "bg-green-500 hover:bg-green-500" : ""} flex-shrink-0 ml-2`}
                     >
                       {system.isActive ? "Connected" : "Disconnected"}
                     </Badge>
                   </div>
 
-                  <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-slate-400 mb-4 flex-grow line-clamp-2">
                     {config.description}
                   </p>
 
