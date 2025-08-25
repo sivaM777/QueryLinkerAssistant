@@ -16,6 +16,7 @@ import {
   LogOut,
   Link as LinkIcon,
   Zap,
+  Menu,
 } from "lucide-react";
 import { useSystemFeatures } from "@/hooks/useSystemFeatures";
 import SearchModal from "@/components/SearchModal";
@@ -78,6 +79,14 @@ function SidebarContent() {
         {/* Navigation Bar */}
         <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-slate-400">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-slate-700"
+              data-testid="hamburger-menu"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
             <span>Home</span>
             <span>/</span>
             <span className="text-primary font-medium">Dashboard</span>
