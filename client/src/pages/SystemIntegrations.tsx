@@ -187,8 +187,30 @@ export default function SystemIntegrations() {
         </div>
         
         <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm" data-testid="reset-integrations">
-            Reset
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              if (confirm("Are you sure you want to remove ALL system integrations? This action cannot be undone.")) {
+                try {
+                  await apiRequest("DELETE", "/api/systems");
+                  toast({
+                    title: "All Systems Removed",
+                    description: "All system integrations have been cleared",
+                  });
+                  queryClient.invalidateQueries({ queryKey: ["/api/systems"] });
+                } catch (error) {
+                  toast({
+                    title: "Reset Failed",
+                    description: "Failed to clear system integrations",
+                    variant: "destructive",
+                  });
+                }
+              }
+            }}
+            data-testid="reset-integrations"
+          >
+            Reset All
           </Button>
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
