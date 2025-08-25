@@ -396,21 +396,23 @@ export default function SLAManagement() {
             <p className="text-sm text-muted-foreground">SLA breaches by category this month</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={breachAnalysisData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
-                <XAxis dataKey="category" className="text-gray-600 dark:text-slate-400" />
-                <YAxis className="text-gray-600 dark:text-slate-400" />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar dataKey="breaches" fill="#ef4444" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="w-full h-[300px] min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={breachAnalysisData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
+                  <XAxis dataKey="category" className="text-gray-600 dark:text-slate-400" />
+                  <YAxis className="text-gray-600 dark:text-slate-400" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <Bar dataKey="breaches" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
