@@ -367,23 +367,25 @@ export default function SLAManagement() {
             <p className="text-sm text-muted-foreground">SLA compliance over the last 6 months</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={complianceTrendData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
-                <XAxis dataKey="month" className="text-gray-600 dark:text-slate-400" />
-                <YAxis className="text-gray-600 dark:text-slate-400" />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Line type="monotone" dataKey="responseTime" stroke="#22c55e" strokeWidth={2} name="Response Time" />
-                <Line type="monotone" dataKey="resolutionTime" stroke="#3b82f6" strokeWidth={2} name="Resolution Time" />
-                <Line type="monotone" dataKey="escalationTime" stroke="#f59e0b" strokeWidth={2} name="Escalation Time" />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="w-full h-[300px] min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={complianceTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
+                  <XAxis dataKey="month" className="text-gray-600 dark:text-slate-400" />
+                  <YAxis className="text-gray-600 dark:text-slate-400" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <Line type="monotone" dataKey="responseTime" stroke="#22c55e" strokeWidth={2} name="Response Time" />
+                  <Line type="monotone" dataKey="resolutionTime" stroke="#3b82f6" strokeWidth={2} name="Resolution Time" />
+                  <Line type="monotone" dataKey="escalationTime" stroke="#f59e0b" strokeWidth={2} name="Escalation Time" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
