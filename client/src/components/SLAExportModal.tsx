@@ -3,16 +3,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  FileText, 
-  FileSpreadsheet, 
-  Download, 
-  Calendar, 
+import {
+  FileText,
+  FileSpreadsheet,
+  Download,
+  Calendar,
   BarChart3,
   FileImage,
   CheckCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
+import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 
 interface SLAData {
   id: number;
@@ -99,57 +101,128 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
     return csvContent;
   };
 
-  const generatePDFData = () => {
+  const generatePDF = () => {
+    const doc = new jsPDF();
     const currentDate = new Date().toLocaleDateString();
     const breachedSLAs = slaData.filter(sla => sla.status === "breached");
     const atRiskSLAs = slaData.filter(sla => sla.status === "at_risk");
-    
-    return {
-      title: "SLA Management Report",
-      generatedDate: currentDate,
-      summary: {
-        totalSLAs: slaData.length,
-        activeSLAs: slaData.filter(sla => sla.isActive).length,
-        overallCompliance: overallCompliance.toFixed(1),
-        breachedCount: breachedSLAs.length,
-        atRiskCount: atRiskSLAs.length
-      },
-      slaDetails: slaData,
-      recommendations: [
-        breachedSLAs.length > 0 ? `Address ${breachedSLAs.length} breached SLA(s) immediately` : null,
-        atRiskSLAs.length > 0 ? `Monitor ${atRiskSLAs.length} at-risk SLA(s) closely` : null,
-        overallCompliance < 90 ? "Consider reviewing SLA thresholds and escalation policies" : null
-      ].filter(Boolean)
-    };
+
+    // Title
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("SLA Management Report", 20, 30);
+
+    // Generated date
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated on: ${currentDate}`, 20, 40);
+
+    // Summary section
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Executive Summary", 20, 55);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    let yPos = 65;
+    doc.text(`Total SLAs: ${slaData.length}`, 20, yPos);
+    doc.text(`Active SLAs: ${slaData.filter(sla => sla.isActive).length}`, 20, yPos += 8);
+    doc.text(`Overall Compliance: ${overallCompliance.toFixed(1)}%`, 20, yPos += 8);
+    doc.text(`Breached SLAs: ${breachedSLAs.length}`, 20, yPos += 8);
+    doc.text(`At Risk SLAs: ${atRiskSLAs.length}`, 20, yPos += 8);
+
+    // SLA Details section
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("SLA Details", 20, yPos);
+
+    yPos += 15;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text("SLA Name", 20, yPos);
+    doc.text("Type", 80, yPos);
+    doc.text("Threshold", 120, yPos);
+    doc.text("Current", 160, yPos);
+    doc.text("Compliance", 185, yPos);
+
+    doc.setFont("helvetica", "normal");
+    yPos += 5;
+
+    slaData.forEach((sla, index) => {
+      if (yPos > 270) { // New page if needed
+        doc.addPage();
+        yPos = 20;
+      }
+      yPos += 8;
+      doc.text(sla.name.substring(0, 20), 20, yPos);
+      doc.text(sla.type, 80, yPos);
+      doc.text(sla.threshold, 120, yPos);
+      doc.text(sla.current, 160, yPos);
+      doc.text(`${sla.compliance}%`, 185, yPos);
+    });
+
+    // Recommendations
+    if (breachedSLAs.length > 0 || atRiskSLAs.length > 0 || overallCompliance < 90) {
+      yPos += 20;
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Recommendations", 20, yPos);
+
+      yPos += 15;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+
+      if (breachedSLAs.length > 0) {
+        doc.text(`• Address ${breachedSLAs.length} breached SLA(s) immediately`, 20, yPos);
+        yPos += 8;
+      }
+      if (atRiskSLAs.length > 0) {
+        doc.text(`• Monitor ${atRiskSLAs.length} at-risk SLA(s) closely`, 20, yPos);
+        yPos += 8;
+      }
+      if (overallCompliance < 90) {
+        doc.text("• Consider reviewing SLA thresholds and escalation policies", 20, yPos);
+      }
+    }
+
+    return doc;
   };
 
-  const generateExcelData = () => {
-    return {
-      worksheets: [
-        {
-          name: "SLA Overview",
-          data: slaData.map(sla => ({
-            "SLA Name": sla.name,
-            "Type": sla.type,
-            "Threshold": sla.threshold,
-            "Current Value": sla.current,
-            "Compliance %": sla.compliance,
-            "Status": sla.status,
-            "Active": sla.isActive ? "Yes" : "No"
-          }))
-        },
-        {
-          name: "Summary",
-          data: [
-            { "Metric": "Total SLAs", "Value": slaData.length },
-            { "Metric": "Active SLAs", "Value": slaData.filter(sla => sla.isActive).length },
-            { "Metric": "Overall Compliance", "Value": `${overallCompliance.toFixed(1)}%` },
-            { "Metric": "Breached SLAs", "Value": slaData.filter(sla => sla.status === "breached").length },
-            { "Metric": "At Risk SLAs", "Value": slaData.filter(sla => sla.status === "at_risk").length }
-          ]
-        }
-      ]
-    };
+  const generateExcel = () => {
+    const workbook = XLSX.utils.book_new();
+
+    // SLA Overview sheet
+    const slaOverviewData = slaData.map(sla => ({
+      "SLA Name": sla.name,
+      "Type": sla.type,
+      "Threshold": sla.threshold,
+      "Current Value": sla.current,
+      "Compliance %": sla.compliance,
+      "Status": sla.status,
+      "Active": sla.isActive ? "Yes" : "No"
+    }));
+    const slaSheet = XLSX.utils.json_to_sheet(slaOverviewData);
+    XLSX.utils.book_append_sheet(workbook, slaSheet, "SLA Overview");
+
+    // Summary sheet
+    const summaryData = [
+      { "Metric": "Total SLAs", "Value": slaData.length },
+      { "Metric": "Active SLAs", "Value": slaData.filter(sla => sla.isActive).length },
+      { "Metric": "Overall Compliance", "Value": `${overallCompliance.toFixed(1)}%` },
+      { "Metric": "Breached SLAs", "Value": slaData.filter(sla => sla.status === "breached").length },
+      { "Metric": "At Risk SLAs", "Value": slaData.filter(sla => sla.status === "at_risk").length },
+      { "Metric": "Generated Date", "Value": new Date().toLocaleDateString() }
+    ];
+    const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
+
+    return workbook;
   };
 
   const downloadFile = (content: string, filename: string, mimeType: string) => {
@@ -181,24 +254,22 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
           break;
 
         case "pdf":
-          const pdfData = generatePDFData();
-          // In a real implementation, you'd use a PDF library like jsPDF
-          const pdfContent = JSON.stringify(pdfData, null, 2);
-          downloadFile(pdfContent, filename.replace('.pdf', '.json'), "application/json");
+          const pdfDoc = generatePDF();
+          pdfDoc.save(filename);
           break;
 
         case "excel":
-          const excelData = generateExcelData();
-          // In a real implementation, you'd use a library like xlsx
-          const excelContent = JSON.stringify(excelData, null, 2);
-          downloadFile(excelContent, filename.replace('.xlsx', '.json'), "application/json");
+          const excelWorkbook = generateExcel();
+          XLSX.writeFile(excelWorkbook, filename);
           break;
 
         case "png":
-          // In a real implementation, you'd capture charts as images
-          const chartData = { message: "Chart export would generate PNG images of SLA charts" };
-          downloadFile(JSON.stringify(chartData, null, 2), filename.replace('.png', '.json'), "application/json");
-          break;
+          // For now, show a message about chart export
+          toast({
+            title: "Chart Export",
+            description: "Chart image export will be available in a future update",
+          });
+          return;
       }
 
       toast({
