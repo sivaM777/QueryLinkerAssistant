@@ -129,8 +129,8 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
 
   const generateHTML = () => {
     const currentDate = new Date().toLocaleDateString();
-    const breachedSLAs = slaData.filter(sla => sla.status === "breached");
-    const atRiskSLAs = slaData.filter(sla => sla.status === "at_risk");
+    const breachedSLAs = slaData.filter(sla => (sla.status || '') === "breached");
+    const atRiskSLAs = slaData.filter(sla => (sla.status || '') === "at_risk");
     
     return `
 <!DOCTYPE html>
@@ -309,8 +309,8 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
   const generatePDF = () => {
     // Generate HTML content that's optimized for PDF printing
     const currentDate = new Date().toLocaleDateString();
-    const breachedSLAs = slaData.filter(sla => sla.status === "breached");
-    const atRiskSLAs = slaData.filter(sla => sla.status === "at_risk");
+    const breachedSLAs = slaData.filter(sla => (sla.status || '') === "breached");
+    const atRiskSLAs = slaData.filter(sla => (sla.status || '') === "at_risk");
     
     return `
 <!DOCTYPE html>
