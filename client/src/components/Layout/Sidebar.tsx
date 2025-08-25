@@ -64,66 +64,102 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
     window.location.href = '/landing';
   };
 
-  // YouTube-style collapsed view
+  // Modern collapsed view
   if (sidebarCollapsed) {
     return (
-      <div className="w-16 bg-white dark:bg-slate-800 shadow-xl h-full flex flex-col">
+      <div className="w-20 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 shadow-2xl h-full flex flex-col relative overflow-hidden">
+        {/* Decorative gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-600/5 pointer-events-none" />
+        
         {/* Collapsed Header */}
-        <div className="p-2 flex-shrink-0">
+        <div className="p-4 flex-shrink-0 relative z-10">
           <div className="flex justify-center">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-              <LinkIcon className="text-white text-sm" />
+            <div className="w-12 h-12 bg-gradient-to-br from-primary via-primary to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-primary/40">
+              <LinkIcon className="text-white text-lg drop-shadow-sm" />
             </div>
           </div>
         </div>
 
         {/* Collapsed Navigation */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <nav className="py-1">
-            {navigation.slice(0, 6).map((item) => {
+        <div className="flex-1 overflow-y-auto min-h-0 relative z-10">
+          <nav className="py-4 space-y-2">
+            {navigation.slice(0, 6).map((item, index) => {
               const isActive = location === item.href && !item.isSearchTrigger;
               const Icon = item.icon;
 
               if (item.isSearchTrigger) {
                 return (
-                  <button
-                    key={item.name}
-                    className="w-full py-3 px-1 flex flex-col items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                    onClick={() => setIsSearchOpen(true)}
-                    data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-                  >
-                    <Icon className="h-5 w-5 mb-1" />
-                    <span className="text-xs text-gray-600 dark:text-slate-400">Search</span>
-                  </button>
+                  <div key={item.name} className="px-3">
+                    <button
+                      className="w-full h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 hover:bg-white/10 hover:backdrop-blur-sm hover:scale-105 group relative"
+                      onClick={() => setIsSearchOpen(true)}
+                      data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/0 via-primary/0 to-primary/0 group-hover:from-primary/10 group-hover:via-primary/5 group-hover:to-purple-600/10 transition-all duration-300" />
+                      <Icon className="h-6 w-6 text-slate-400 group-hover:text-white transition-all duration-300 group-hover:scale-110 drop-shadow-sm" />
+                      <span className="text-xs text-slate-400 group-hover:text-white mt-1 font-medium transition-all duration-300">AI</span>
+                    </button>
+                  </div>
                 );
               }
 
               return (
-                <Link key={item.name} href={item.href}>
-                  <button
-                    className={cn(
-                      "w-full py-3 px-1 flex flex-col items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors",
-                      isActive && "bg-primary/10 text-primary"
-                    )}
-                    data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-                  >
-                    <Icon className={cn(
-                      "h-5 w-5 mb-1",
-                      isActive ? "text-primary" : "text-gray-600 dark:text-slate-400"
-                    )} />
-                    <span className={cn(
-                      "text-xs",
-                      isActive ? "text-primary font-medium" : "text-gray-600 dark:text-slate-400"
-                    )}>
-                      {item.name === "System Integrations" ? "Systems" : 
-                       item.name === "SLA Management" ? "SLA" : item.name}
-                    </span>
-                  </button>
-                </Link>
+                <div key={item.name} className="px-3">
+                  <Link href={item.href}>
+                    <button
+                      className={cn(
+                        "w-full h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 hover:scale-105 group relative",
+                        isActive 
+                          ? "bg-gradient-to-r from-primary to-primary/80 shadow-lg shadow-primary/25" 
+                          : "hover:bg-white/10 hover:backdrop-blur-sm"
+                      )}
+                      data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      {!isActive && (
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/0 via-primary/0 to-primary/0 group-hover:from-primary/10 group-hover:via-primary/5 group-hover:to-purple-600/10 transition-all duration-300" />
+                      )}
+                      <Icon className={cn(
+                        "h-6 w-6 transition-all duration-300 group-hover:scale-110 drop-shadow-sm",
+                        isActive 
+                          ? "text-white" 
+                          : "text-slate-400 group-hover:text-white"
+                      )} />
+                      <span className={cn(
+                        "text-xs mt-1 font-medium transition-all duration-300",
+                        isActive 
+                          ? "text-white" 
+                          : "text-slate-400 group-hover:text-white"
+                      )}>
+                        {item.name === "System Integrations" ? "Systems" : 
+                         item.name === "SLA Management" ? "SLA" : 
+                         item.name === "Dashboard" ? "Home" :
+                         item.name === "Analytics" ? "Stats" : item.name}
+                      </span>
+                      {item.badge && !isActive && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full shadow-lg animate-pulse" />
+                      )}
+                    </button>
+                  </Link>
+                </div>
               );
             })}
           </nav>
         </div>
+        
+        {/* Collapsed User Section */}
+        <div className="p-3 relative z-10">
+          <div className="flex justify-center">
+            <button
+              onClick={handleLogout}
+              className="w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 group"
+              data-testid="logout-button"
+              title="Logout"
+            >
+              <LogOut className="h-5 w-5 text-slate-400 group-hover:text-white transition-colors" />
+            </button>
+          </div>
+        </div>
+        
         <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       </div>
     );
@@ -320,11 +356,11 @@ export default function Sidebar() {
 
   // Update CSS variable for main content margin
   React.useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '4rem' : '16rem');
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '5rem' : '16rem');
   }, [isCollapsed]);
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 hidden lg:block`}>
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 hidden lg:block`}>
       <SidebarContent sidebarCollapsed={isCollapsed} />
     </aside>
   );
