@@ -25,7 +25,7 @@ export default function SystemIntegrations() {
 
   const syncMutation = useMutation({
     mutationFn: async (systemId: number) => {
-      await apiRequest("POST", `/api/systems/${systemId}/sync`);
+      await apiRequest(`/api/systems/${systemId}/sync`, { method: "POST" });
     },
     onSuccess: () => {
       toast({
@@ -45,7 +45,7 @@ export default function SystemIntegrations() {
 
   const addSystemMutation = useMutation({
     mutationFn: async (systemData: any) => {
-      await apiRequest("POST", "/api/systems", systemData);
+      await apiRequest("/api/systems", { method: "POST", body: JSON.stringify(systemData) });
     },
     onSuccess: () => {
       toast({
@@ -67,7 +67,7 @@ export default function SystemIntegrations() {
 
   const deleteSystemMutation = useMutation({
     mutationFn: async (systemId: number) => {
-      await apiRequest("DELETE", `/api/systems/${systemId}`);
+      await apiRequest(`/api/systems/${systemId}`, { method: "DELETE" });
     },
     onSuccess: () => {
       toast({
@@ -193,7 +193,7 @@ export default function SystemIntegrations() {
             onClick={async () => {
               if (confirm("Are you sure you want to remove ALL system integrations? This action cannot be undone.")) {
                 try {
-                  await apiRequest("DELETE", "/api/systems");
+                  await apiRequest("/api/systems", { method: "DELETE" });
                   toast({
                     title: "All Systems Removed",
                     description: "All system integrations have been cleared",
@@ -292,7 +292,7 @@ export default function SystemIntegrations() {
             </Card>
           ))
         ) : (
-          (systems || []).map((system: any, index: number) => {
+          (Array.isArray(systems) ? systems : []).map((system: any, index: number) => {
             const config = getSystemConfig(system);
             return (
             <motion.div
@@ -406,14 +406,14 @@ export default function SystemIntegrations() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {systems?.filter((s: any) => s.isActive).length || 0}
+                {Array.isArray(systems) ? systems.filter((s: any) => s.isActive).length : 0}
               </div>
               <div className="text-sm text-gray-500 dark:text-slate-400 mt-1">Connected Systems</div>
               <div className="text-xs text-gray-400 mt-1">All operational</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {systems?.length || 0}
+                {Array.isArray(systems) ? systems.length : 0}
               </div>
               <div className="text-sm text-gray-500 dark:text-slate-400 mt-1">Total Systems</div>
               <div className="text-xs text-gray-400 mt-1">Active & Inactive</div>
