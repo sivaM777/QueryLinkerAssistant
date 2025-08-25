@@ -13,7 +13,7 @@ import {
   CheckCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
 
 interface SLAData {
@@ -254,8 +254,16 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
           break;
 
         case "pdf":
-          const pdfDoc = generatePDF();
-          pdfDoc.save(filename);
+          try {
+            console.log("Starting PDF generation...");
+            const pdfDoc = generatePDF();
+            console.log("PDF generated successfully, saving...");
+            pdfDoc.save(filename);
+            console.log("PDF save called successfully");
+          } catch (pdfError) {
+            console.error("PDF generation error:", pdfError);
+            throw new Error(`PDF generation failed: ${pdfError instanceof Error ? pdfError.message : 'Unknown PDF error'}`);
+          }
           break;
 
         case "excel":
@@ -281,9 +289,10 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
       setTimeout(() => onClose(), 1000);
 
     } catch (error) {
+      console.error("Export error:", error);
       toast({
         title: "Export Failed",
-        description: `Failed to export ${format.name}`,
+        description: `Failed to export ${format.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
