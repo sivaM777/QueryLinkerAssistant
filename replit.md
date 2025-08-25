@@ -7,6 +7,7 @@ QueryLinker is a comprehensive IT Service Management (ITSM) platform that levera
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+User prefers hamburger menu navigation functionality available in all versions (mobile and desktop).
 
 ## System Architecture
 

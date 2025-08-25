@@ -46,7 +46,7 @@ export default function Header({ onSearchOpen }: HeaderProps = {}) {
       <div className="px-4 lg:px-6 py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center space-x-4 min-w-0 flex-1 lg:flex-initial">
-            <SidebarTrigger className="lg:hidden flex-shrink-0" />
+            <SidebarTrigger className="flex-shrink-0" />
             <div className="min-w-0">
               <h2 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">Dashboard</h2>
             </div>
