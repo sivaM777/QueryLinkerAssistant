@@ -1421,7 +1421,7 @@ class PersistentStorage extends MemoryStorage {
     ];
 
     this.slaTargets = defaultSLAs;
-    console.log('✓ Initialized database with default ITSM systems and SLA targets');
+    console.log('✓ Initialized database with default SLA targets only');
   }
 }
 
