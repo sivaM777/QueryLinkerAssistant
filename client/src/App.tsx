@@ -11,6 +11,7 @@ import SystemIntegrations from "@/pages/SystemIntegrations";
 import SLAManagement from "@/pages/SLAManagement";
 import KnowledgeBase from "@/pages/KnowledgeBase";
 import Settings from "@/pages/Settings";
+import Activity from "@/pages/Activity";
 import Landing from "@/pages/Landing";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
@@ -44,6 +45,7 @@ function Router() {
               <Route path="/integrations" component={SystemIntegrations} />
               <Route path="/sla" component={SLAManagement} />
               <Route path="/knowledge" component={KnowledgeBase} />
+              <Route path="/activity" component={Activity} />
               <Route path="/settings" component={Settings} />
               <Route component={NotFound} />
             </Switch>
