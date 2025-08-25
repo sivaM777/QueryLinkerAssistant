@@ -86,6 +86,14 @@
       "createdAt": "2025-08-24T11:02:45.104Z",
       "updatedAt": "2025-08-24T11:02:45.104Z",
       "lastSyncAt": null
+    },
+    {
+      "name": "Slack",
+      "type": "slack",
+      "isActive": true,
+      "id": 778,
+      "createdAt": "2025-08-25T14:01:22.413Z",
+      "updatedAt": "2025-08-25T14:01:22.413Z"
     }
   ],
   "solutions": [],
@@ -15324,5 +15332,5 @@
     }
   ],
   "incidentMetrics": [],
-  "idCounter": 778
+  "idCounter": 779
 }
