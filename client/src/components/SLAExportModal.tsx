@@ -100,12 +100,12 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
   const generateCSV = () => {
     const headers = ["SLA Name", "Type", "Threshold", "Current", "Compliance (%)", "Status", "Active"];
     const rows = slaData.map(sla => [
-      `"${sla.name}"`,
-      `"${sla.type}"`,
-      `"${sla.threshold}"`,
-      `"${sla.current}"`,
-      sla.compliance.toString(),
-      `"${sla.status}"`,
+      `"${sla.name || 'N/A'}"`,
+      `"${sla.type || 'N/A'}"`,
+      `"${sla.threshold || 'N/A'}"`,
+      `"${sla.current || 'N/A'}"`,
+      (sla.compliance || 0).toString(),
+      `"${sla.status || 'unknown'}"`,
       sla.isActive ? "Yes" : "No"
     ]);
 
@@ -208,12 +208,12 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
             <tbody>
                 ${slaData.map(sla => `
                     <tr>
-                        <td>${sla.name}</td>
-                        <td>${sla.type}</td>
-                        <td>${sla.threshold}</td>
-                        <td>${sla.current}</td>
-                        <td>${sla.compliance}%</td>
-                        <td class="status-${sla.status}">${sla.status.replace('_', ' ').toUpperCase()}</td>
+                        <td>${sla.name || 'N/A'}</td>
+                        <td>${sla.type || 'N/A'}</td>
+                        <td>${sla.threshold || 'N/A'}</td>
+                        <td>${sla.current || 'N/A'}</td>
+                        <td>${sla.compliance || 0}%</td>
+                        <td class="status-${sla.status || 'unknown'}">${(sla.status || 'unknown').replace('_', ' ').toUpperCase()}</td>
                         <td>${sla.isActive ? 'Yes' : 'No'}</td>
                     </tr>
                 `).join('')}
@@ -288,12 +288,12 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
     slaData.forEach(sla => {
       content += `
    <Row>
-    <Cell><Data ss:Type="String">${sla.name}</Data></Cell>
-    <Cell><Data ss:Type="String">${sla.type}</Data></Cell>
-    <Cell><Data ss:Type="String">${sla.threshold}</Data></Cell>
-    <Cell><Data ss:Type="String">${sla.current}</Data></Cell>
-    <Cell><Data ss:Type="Number">${sla.compliance}</Data></Cell>
-    <Cell><Data ss:Type="String">${sla.status}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.name || 'N/A'}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.type || 'N/A'}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.threshold || 'N/A'}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.current || 'N/A'}</Data></Cell>
+    <Cell><Data ss:Type="Number">${sla.compliance || 0}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.status || 'unknown'}</Data></Cell>
     <Cell><Data ss:Type="String">${sla.isActive ? 'Yes' : 'No'}</Data></Cell>
    </Row>`;
     });
@@ -371,12 +371,12 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
         <tbody>
             ${slaData.map(sla => `
                 <tr>
-                    <td>${sla.name}</td>
-                    <td>${sla.type}</td>
-                    <td>${sla.threshold}</td>
-                    <td>${sla.current}</td>
-                    <td>${sla.compliance}%</td>
-                    <td>${sla.status.replace('_', ' ').toUpperCase()}</td>
+                    <td>${sla.name || 'N/A'}</td>
+                    <td>${sla.type || 'N/A'}</td>
+                    <td>${sla.threshold || 'N/A'}</td>
+                    <td>${sla.current || 'N/A'}</td>
+                    <td>${sla.compliance || 0}%</td>
+                    <td>${(sla.status || 'unknown').replace('_', ' ').toUpperCase()}</td>
                 </tr>
             `).join('')}
         </tbody>
