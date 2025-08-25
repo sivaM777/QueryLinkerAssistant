@@ -408,8 +408,34 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .hover-lift:hover {
     transform: none;
+  }
+}
+
+/* Chart container improvements to prevent ResizeObserver issues */
+.recharts-responsive-container {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden;
+}
+
+/* Prevent layout shifts in chart containers */
+.chart-container {
+  contain: layout style;
+  will-change: auto;
+}
+
+/* Stable sizing for progress components */
+.progress-container {
+  contain: layout;
+}
+
+/* Prevent ResizeObserver loops from animations */
+@media (prefers-reduced-motion: no-preference) {
+  .recharts-responsive-container {
+    transition: none !important;
   }
 }
