@@ -17,7 +17,7 @@ export default function Header({ onSearchOpen }: HeaderProps = {}) {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: notifications } = useQuery({
+  const { data: notifications } = useQuery<any[]>({
     queryKey: ["/api/notifications", { unread: true }],
   });
 

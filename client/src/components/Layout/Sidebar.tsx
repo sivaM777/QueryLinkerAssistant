@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import {
   LayoutDashboard,
   Search,
@@ -31,12 +32,11 @@ const baseNavigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-function SidebarContent() {
+function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boolean }) {
   const [location] = useLocation();
   const { availableFeatures, connectedSystemTypes } = useSystemFeatures();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { setOpenMobile, isMobile } = useSidebar();
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Build navigation with system features
   const navigation = [...baseNavigation];
@@ -64,6 +64,65 @@ function SidebarContent() {
     window.location.href = '/landing';
   };
 
+  // YouTube-style collapsed view
+  if (sidebarCollapsed) {
+    return (
+      <div className="w-20 bg-white dark:bg-slate-800 shadow-xl h-full flex flex-col">
+        {/* Collapsed Header */}
+        <div className="p-3 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+          <div className="flex justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
+              <LinkIcon className="text-white text-sm" />
+            </div>
+          </div>
+        </div>
+
+        {/* Collapsed Navigation */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <nav className="py-4 space-y-1">
+            {navigation.slice(0, 5).map((item) => {
+              const isActive = location === item.href && !item.isSearchTrigger;
+              const Icon = item.icon;
+
+              if (item.isSearchTrigger) {
+                return (
+                  <Button
+                    key={item.name}
+                    variant="ghost"
+                    className="w-full h-16 flex-col justify-center p-2 hover:bg-gray-100 dark:hover:bg-slate-700"
+                    onClick={() => setIsSearchOpen(true)}
+                    data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <Icon className="h-6 w-6 mb-1" />
+                    <span className="text-xs leading-tight">{item.name}</span>
+                  </Button>
+                );
+              }
+
+              return (
+                <Link key={item.name} href={item.href}>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full h-16 flex-col justify-center p-2 hover:bg-gray-100 dark:hover:bg-slate-700",
+                      isActive && "bg-primary/10 text-primary"
+                    )}
+                    data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <Icon className="h-6 w-6 mb-1" />
+                    <span className="text-xs leading-tight text-center">{item.name}</span>
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      </div>
+    );
+  }
+
+  // Full expanded view
   return (
     <div className="w-64 bg-white dark:bg-slate-800 shadow-xl h-full flex flex-col">
       {/* Fixed Header */}
@@ -89,7 +148,7 @@ function SidebarContent() {
                 if (isMobile) {
                   setOpenMobile(false);
                 } else {
-                  setIsCollapsed(!isCollapsed);
+                  window.dispatchEvent(new CustomEvent('toggle-sidebar'));
                 }
               }}
               data-testid="hamburger-menu"
@@ -230,6 +289,17 @@ function SidebarContent() {
 
 export default function Sidebar() {
   const { isMobile, openMobile, setOpenMobile } = useSidebar();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Handle global state for collapse
+  useEffect(() => {
+    const handleCollapseToggle = () => {
+      setIsCollapsed(prev => !prev);
+    };
+    
+    window.addEventListener('toggle-sidebar', handleCollapseToggle);
+    return () => window.removeEventListener('toggle-sidebar', handleCollapseToggle);
+  }, []);
 
   if (isMobile) {
     return (
@@ -241,9 +311,14 @@ export default function Sidebar() {
     );
   }
 
+  // Update CSS variable for main content margin
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '5rem' : '16rem');
+  }, [isCollapsed]);
+
   return (
-    <aside className="w-64 bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 hidden lg:block">
-      <SidebarContent />
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 hidden lg:block`}>
+      <SidebarContent sidebarCollapsed={isCollapsed} />
     </aside>
   );
 }
