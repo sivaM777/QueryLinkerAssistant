@@ -67,9 +67,9 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
   // YouTube-style collapsed view
   if (sidebarCollapsed) {
     return (
-      <div className="w-20 bg-white dark:bg-slate-800 shadow-xl h-full flex flex-col">
+      <div className="w-16 bg-white dark:bg-slate-800 shadow-xl h-full flex flex-col">
         {/* Collapsed Header */}
-        <div className="p-3 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+        <div className="p-2 flex-shrink-0">
           <div className="flex justify-center">
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
               <LinkIcon className="text-white text-sm" />
@@ -79,39 +79,46 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
 
         {/* Collapsed Navigation */}
         <div className="flex-1 overflow-y-auto min-h-0">
-          <nav className="py-4 space-y-1">
-            {navigation.slice(0, 5).map((item) => {
+          <nav className="py-1">
+            {navigation.slice(0, 6).map((item) => {
               const isActive = location === item.href && !item.isSearchTrigger;
               const Icon = item.icon;
 
               if (item.isSearchTrigger) {
                 return (
-                  <Button
+                  <button
                     key={item.name}
-                    variant="ghost"
-                    className="w-full h-16 flex-col justify-center p-2 hover:bg-gray-100 dark:hover:bg-slate-700"
+                    className="w-full py-3 px-1 flex flex-col items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                     onClick={() => setIsSearchOpen(true)}
                     data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    <Icon className="h-6 w-6 mb-1" />
-                    <span className="text-xs leading-tight">{item.name}</span>
-                  </Button>
+                    <Icon className="h-5 w-5 mb-1" />
+                    <span className="text-xs text-gray-600 dark:text-slate-400">Search</span>
+                  </button>
                 );
               }
 
               return (
                 <Link key={item.name} href={item.href}>
-                  <Button
-                    variant="ghost"
+                  <button
                     className={cn(
-                      "w-full h-16 flex-col justify-center p-2 hover:bg-gray-100 dark:hover:bg-slate-700",
+                      "w-full py-3 px-1 flex flex-col items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors",
                       isActive && "bg-primary/10 text-primary"
                     )}
                     data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    <Icon className="h-6 w-6 mb-1" />
-                    <span className="text-xs leading-tight text-center">{item.name}</span>
-                  </Button>
+                    <Icon className={cn(
+                      "h-5 w-5 mb-1",
+                      isActive ? "text-primary" : "text-gray-600 dark:text-slate-400"
+                    )} />
+                    <span className={cn(
+                      "text-xs",
+                      isActive ? "text-primary font-medium" : "text-gray-600 dark:text-slate-400"
+                    )}>
+                      {item.name === "System Integrations" ? "Systems" : 
+                       item.name === "SLA Management" ? "SLA" : item.name}
+                    </span>
+                  </button>
                 </Link>
               );
             })}
@@ -313,11 +320,11 @@ export default function Sidebar() {
 
   // Update CSS variable for main content margin
   React.useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '5rem' : '16rem');
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '4rem' : '16rem');
   }, [isCollapsed]);
 
   return (
-    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 hidden lg:block`}>
+    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 hidden lg:block`}>
       <SidebarContent sidebarCollapsed={isCollapsed} />
     </aside>
   );
