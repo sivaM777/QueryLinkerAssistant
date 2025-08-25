@@ -214,23 +214,25 @@ export default function Analytics() {
             <p className="text-sm text-muted-foreground">Search activity and solution creation over time</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={usageTrendsData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
-                <XAxis dataKey="date" className="text-gray-600 dark:text-slate-400" />
-                <YAxis className="text-gray-600 dark:text-slate-400" />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Line type="monotone" dataKey="searches" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }} />
-                <Line type="monotone" dataKey="solutions" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }} />
-                <Line type="monotone" dataKey="slaCompliance" stroke="#f59e0b" strokeWidth={3} dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="w-full h-[300px] min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={usageTrendsData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
+                  <XAxis dataKey="date" className="text-gray-600 dark:text-slate-400" />
+                  <YAxis className="text-gray-600 dark:text-slate-400" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <Line type="monotone" dataKey="searches" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }} />
+                  <Line type="monotone" dataKey="solutions" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }} />
+                  <Line type="monotone" dataKey="slaCompliance" stroke="#f59e0b" strokeWidth={3} dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
