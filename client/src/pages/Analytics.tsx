@@ -142,7 +142,7 @@ export default function Analytics() {
             <p className="text-sm text-muted-foreground">Link interactions by system</p>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-[300px] min-h-[300px]">
+            <div className="w-full h-[300px] min-h-[300px] chart-container">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={systemPopularityData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
