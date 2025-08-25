@@ -63,7 +63,8 @@ function SidebarContent() {
 
   return (
     <div className="w-64 bg-white dark:bg-slate-800 shadow-xl h-full flex flex-col">
-      <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+      {/* Fixed Header */}
+      <div className="p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center">
             <LinkIcon className="text-white text-lg" />
@@ -75,7 +76,9 @@ function SidebarContent() {
         </div>
       </div>
 
-      <nav className="mt-6 px-4 space-y-2">
+      {/* Scrollable Navigation Area */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <nav className="mt-6 px-4 pb-32 space-y-2">
         {navigation.map((item) => {
           const isActive = location === item.href && !item.isSearchTrigger;
           const Icon = item.icon;
@@ -97,9 +100,9 @@ function SidebarContent() {
                   "text-gray-400 group-hover:text-primary group-hover:scale-110"
                 )} />
                 <span className="font-medium">{item.name}</span>
-                {item.badge && (
+                {(item as any).badge && (
                   <Badge className="ml-auto bg-primary text-primary-foreground">
-                    {item.badge}
+                    {(item as any).badge}
                   </Badge>
                 )}
               </Button>
@@ -115,19 +118,19 @@ function SidebarContent() {
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700",
-                  item.isSystemFeature && "border border-primary/20 bg-primary/5"
+                  (item as any).isSystemFeature && "border border-primary/20 bg-primary/5"
                 )}
                 data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 <Icon className={cn(
                   "mr-3 h-4 w-4 transition-transform",
                   isActive ? "text-primary-foreground" : "text-gray-400 group-hover:text-primary group-hover:scale-110",
-                  item.isSystemFeature && "text-primary"
+                  (item as any).isSystemFeature && "text-primary"
                 )} />
                 <span className="font-medium">{item.name}</span>
-                {item.badge && !item.isSystemFeature && (
+                {(item as any).badge && !(item as any).isSystemFeature && (
                   <Badge className="ml-auto bg-primary text-primary-foreground">
-                    {item.badge}
+                    {(item as any).badge}
                   </Badge>
                 )}
               </Button>
@@ -155,9 +158,11 @@ function SidebarContent() {
             </div>
           </div>
         )}
-      </nav>
+        </nav>
+      </div>
 
-      <div className="absolute bottom-6 left-4 right-4">
+      {/* Fixed User Profile at Bottom */}
+      <div className="absolute bottom-6 left-4 right-4 flex-shrink-0">
         <div className="bg-white/10 dark:bg-slate-700/50 backdrop-blur-sm rounded-xl p-4 border border-white/20 dark:border-slate-600/30">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
