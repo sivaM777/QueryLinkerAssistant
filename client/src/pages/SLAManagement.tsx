@@ -16,11 +16,13 @@ import { ArrowLeft, Plus, AlertTriangle, Clock, CheckCircle, TrendingUp, Downloa
 import { Link } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { motion } from "framer-motion";
+import SLAExportModal from "@/components/SLAExportModal";
 
 export default function SLAManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [newSLA, setNewSLA] = useState({
     name: "",
     type: "",
@@ -168,7 +170,12 @@ export default function SLAManagement() {
         </div>
         
         <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm" data-testid="export-sla-report">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowExportModal(true)}
+            data-testid="export-sla-report"
+          >
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
@@ -460,6 +467,14 @@ export default function SLAManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Export Modal */}
+      <SLAExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        slaData={targets}
+        overallCompliance={overallCompliance}
+      />
     </div>
   );
 }
