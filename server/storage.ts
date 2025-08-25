@@ -1380,56 +1380,11 @@ class PersistentStorage extends MemoryStorage {
   }
 
   private initializeDefaultData() {
-    // Add some initial systems for the ITSM platform
-    const defaultSystems: System[] = [
-      {
-        id: this.idCounter++,
-        name: 'Jira Service Management',
-        type: 'ticketing',
-        config: {
-          baseUrl: 'https://your-domain.atlassian.net',
-          authType: 'oauth',
-          syncInterval: 300,
-          description: 'Primary ticketing and incident management system'
-        },
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastSyncAt: null,
-      },
-      {
-        id: this.idCounter++,
-        name: 'Confluence Knowledge Base',
-        type: 'knowledge',
-        config: {
-          baseUrl: 'https://your-domain.atlassian.net/wiki',
-          authType: 'oauth',
-          syncInterval: 600,
-          description: 'Internal documentation and knowledge base'
-        },
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastSyncAt: null,
-      },
-      {
-        id: this.idCounter++,
-        name: 'GitHub Repository',
-        type: 'repository',
-        config: {
-          baseUrl: 'https://api.github.com',
-          authType: 'token',
-          syncInterval: 900,
-          description: 'Source code and technical documentation'
-        },
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastSyncAt: null,
-      },
-    ];
+    // Only initialize data if this is truly a fresh start
+    // Don't automatically create systems as they should be added by user
+    console.log('✓ Starting with fresh database - no default systems created');
 
-    this.systems = defaultSystems;
+    // Only initialize essential SLA data, no systems
 
     // Add some default SLA targets
     const defaultSLAs: SLATarget[] = [
