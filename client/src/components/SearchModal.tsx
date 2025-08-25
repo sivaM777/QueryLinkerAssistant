@@ -80,10 +80,13 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
+      <DialogContent
         className="max-w-2xl mx-4 p-0 gap-0 bg-white dark:bg-slate-800 border-0 shadow-2xl"
         data-testid="search-modal"
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Search Modal</DialogTitle>
+        </DialogHeader>
         <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <form onSubmit={handleSubmit} className="relative">
             <Input
