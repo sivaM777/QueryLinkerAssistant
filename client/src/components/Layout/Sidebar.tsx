@@ -74,6 +74,19 @@ function SidebarContent() {
             <p className="text-xs text-gray-500 dark:text-slate-400">AI-Powered ITSM</p>
           </div>
         </div>
+        
+        {/* Navigation Bar */}
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-slate-400">
+            <span>Home</span>
+            <span>/</span>
+            <span className="text-primary font-medium">Dashboard</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-gray-500 dark:text-slate-400">Online</span>
+          </div>
+        </div>
       </div>
 
       {/* Scrollable Navigation Area */}
