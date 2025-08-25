@@ -142,21 +142,23 @@ export default function Analytics() {
             <p className="text-sm text-muted-foreground">Link interactions by system</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={systemPopularityData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
-                <XAxis dataKey="name" className="text-gray-600 dark:text-slate-400" />
-                <YAxis className="text-gray-600 dark:text-slate-400" />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="w-full h-[300px] min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={systemPopularityData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
+                  <XAxis dataKey="name" className="text-gray-600 dark:text-slate-400" />
+                  <YAxis className="text-gray-600 dark:text-slate-400" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
