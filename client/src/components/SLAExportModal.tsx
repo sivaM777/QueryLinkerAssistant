@@ -102,96 +102,92 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
   };
 
   const generatePDF = () => {
-    const doc = new jsPDF();
-    const currentDate = new Date().toLocaleDateString();
-    const breachedSLAs = slaData.filter(sla => sla.status === "breached");
-    const atRiskSLAs = slaData.filter(sla => sla.status === "at_risk");
+    try {
+      const doc = new jsPDF();
+      const currentDate = new Date().toLocaleDateString();
+      const breachedSLAs = slaData.filter(sla => sla.status === "breached");
+      const atRiskSLAs = slaData.filter(sla => sla.status === "at_risk");
 
-    // Title
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("SLA Management Report", 20, 30);
+      // Title
+      doc.setFontSize(20);
+      doc.text("SLA Management Report", 20, 30);
 
-    // Generated date
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated on: ${currentDate}`, 20, 40);
+      // Generated date
+      doc.setFontSize(12);
+      doc.text(`Generated on: ${currentDate}`, 20, 45);
 
-    // Summary section
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Executive Summary", 20, 55);
+      // Summary section
+      doc.setFontSize(16);
+      doc.text("Executive Summary", 20, 65);
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    let yPos = 65;
-    doc.text(`Total SLAs: ${slaData.length}`, 20, yPos);
-    doc.text(`Active SLAs: ${slaData.filter(sla => sla.isActive).length}`, 20, yPos += 8);
-    doc.text(`Overall Compliance: ${overallCompliance.toFixed(1)}%`, 20, yPos += 8);
-    doc.text(`Breached SLAs: ${breachedSLAs.length}`, 20, yPos += 8);
-    doc.text(`At Risk SLAs: ${atRiskSLAs.length}`, 20, yPos += 8);
+      doc.setFontSize(12);
+      let yPos = 80;
+      doc.text(`Total SLAs: ${slaData.length}`, 20, yPos);
+      doc.text(`Active SLAs: ${slaData.filter(sla => sla.isActive).length}`, 20, yPos += 10);
+      doc.text(`Overall Compliance: ${overallCompliance.toFixed(1)}%`, 20, yPos += 10);
+      doc.text(`Breached SLAs: ${breachedSLAs.length}`, 20, yPos += 10);
+      doc.text(`At Risk SLAs: ${atRiskSLAs.length}`, 20, yPos += 10);
 
-    // SLA Details section
-    yPos += 20;
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("SLA Details", 20, yPos);
-
-    yPos += 15;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text("SLA Name", 20, yPos);
-    doc.text("Type", 80, yPos);
-    doc.text("Threshold", 120, yPos);
-    doc.text("Current", 160, yPos);
-    doc.text("Compliance", 185, yPos);
-
-    doc.setFont("helvetica", "normal");
-    yPos += 5;
-
-    slaData.forEach((sla, index) => {
-      if (yPos > 270) { // New page if needed
-        doc.addPage();
-        yPos = 20;
-      }
-      yPos += 8;
-      doc.text(sla.name.substring(0, 20), 20, yPos);
-      doc.text(sla.type, 80, yPos);
-      doc.text(sla.threshold, 120, yPos);
-      doc.text(sla.current, 160, yPos);
-      doc.text(`${sla.compliance}%`, 185, yPos);
-    });
-
-    // Recommendations
-    if (breachedSLAs.length > 0 || atRiskSLAs.length > 0 || overallCompliance < 90) {
+      // SLA Details section
       yPos += 20;
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Recommendations", 20, yPos);
+      doc.setFontSize(16);
+      doc.text("SLA Details", 20, yPos);
 
       yPos += 15;
       doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
+      doc.text("Name", 20, yPos);
+      doc.text("Type", 80, yPos);
+      doc.text("Threshold", 120, yPos);
+      doc.text("Current", 160, yPos);
+      doc.text("Compliance", 185, yPos);
 
-      if (breachedSLAs.length > 0) {
-        doc.text(`• Address ${breachedSLAs.length} breached SLA(s) immediately`, 20, yPos);
-        yPos += 8;
+      yPos += 10;
+
+      slaData.forEach((sla, index) => {
+        if (yPos > 270) { // New page if needed
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(sla.name.substring(0, 18), 20, yPos);
+        doc.text(sla.type.substring(0, 10), 80, yPos);
+        doc.text(sla.threshold.substring(0, 10), 120, yPos);
+        doc.text(sla.current.substring(0, 8), 160, yPos);
+        doc.text(`${sla.compliance}%`, 185, yPos);
+        yPos += 10;
+      });
+
+      // Recommendations
+      if (breachedSLAs.length > 0 || atRiskSLAs.length > 0 || overallCompliance < 90) {
+        yPos += 15;
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(16);
+        doc.text("Recommendations", 20, yPos);
+
+        yPos += 15;
+        doc.setFontSize(11);
+
+        if (breachedSLAs.length > 0) {
+          doc.text(`- Address ${breachedSLAs.length} breached SLA(s) immediately`, 20, yPos);
+          yPos += 10;
+        }
+        if (atRiskSLAs.length > 0) {
+          doc.text(`- Monitor ${atRiskSLAs.length} at-risk SLA(s) closely`, 20, yPos);
+          yPos += 10;
+        }
+        if (overallCompliance < 90) {
+          doc.text("- Consider reviewing SLA thresholds and escalation policies", 20, yPos);
+        }
       }
-      if (atRiskSLAs.length > 0) {
-        doc.text(`• Monitor ${atRiskSLAs.length} at-risk SLA(s) closely`, 20, yPos);
-        yPos += 8;
-      }
-      if (overallCompliance < 90) {
-        doc.text("• Consider reviewing SLA thresholds and escalation policies", 20, yPos);
-      }
+
+      return doc;
+    } catch (error) {
+      console.error("Error in generatePDF:", error);
+      throw error;
     }
-
-    return doc;
   };
 
   const generateExcel = () => {
