@@ -35,6 +35,7 @@ function SidebarContent() {
   const [location] = useLocation();
   const { availableFeatures, connectedSystemTypes } = useSystemFeatures();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { setOpenMobile } = useSidebar();
 
   // Build navigation with system features
   const navigation = [...baseNavigation];
@@ -83,6 +84,7 @@ function SidebarContent() {
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-slate-700"
+              onClick={() => setOpenMobile(false)}
               data-testid="hamburger-menu"
             >
               <Menu className="h-4 w-4" />
