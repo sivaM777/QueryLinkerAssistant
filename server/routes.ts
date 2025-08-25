@@ -66,17 +66,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/systems/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+      console.log(`Attempting to delete system with ID: ${id}`);
+
       // First delete all solutions from this system
       await storage.deleteSolutionsBySystem(id);
-      
+
       // Then delete the system
       const deleted = await storage.deleteSystem(id);
-      
+
       if (!deleted) {
+        console.log(`System with ID ${id} not found`);
         return res.status(404).json({ message: "System not found" });
       }
-      
+
+      console.log(`Successfully deleted system with ID: ${id}`);
+
       // Broadcast system removal via WebSocket
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
@@ -86,11 +90,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }));
         }
       });
-      
+
       res.json({ message: "System deleted successfully" });
     } catch (error) {
       console.error("Error deleting system:", error);
       res.status(500).json({ message: "Failed to delete system" });
+    }
+  });
+
+  // Reset/clear all systems (for testing purposes)
+  app.delete('/api/systems', async (req, res) => {
+    try {
+      const systems = await storage.getSystems();
+      let deletedCount = 0;
+
+      for (const system of systems) {
+        // Delete solutions first
+        await storage.deleteSolutionsBySystem(system.id);
+        // Then delete the system
+        const deleted = await storage.deleteSystem(system.id);
+        if (deleted) deletedCount++;
+      }
+
+      console.log(`Reset: Deleted ${deletedCount} systems`);
+
+      // Broadcast reset via WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'systems_reset',
+            data: { deletedCount, timestamp: new Date() }
+          }));
+        }
+      });
+
+      res.json({ message: `Successfully deleted ${deletedCount} systems` });
+    } catch (error) {
+      console.error("Error resetting systems:", error);
+      res.status(500).json({ message: "Failed to reset systems" });
     }
   });
 
