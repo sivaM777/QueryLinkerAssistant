@@ -3,18 +3,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import {
-  FileText,
-  FileSpreadsheet,
-  Download,
-  Calendar,
+import { 
+  FileText, 
+  FileSpreadsheet, 
+  Download, 
+  Calendar, 
   BarChart3,
   FileImage,
   CheckCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { jsPDF } from "jspdf";
-import * as XLSX from "xlsx";
 
 interface SLAData {
   id: number;
@@ -73,164 +71,337 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
       color: "blue"
     },
     {
-      id: "png",
-      name: "Chart Image",
-      description: "Visual charts and graphs as images",
+      id: "html",
+      name: "HTML Report",
+      description: "Web-based report for viewing and printing",
       icon: FileImage,
-      fileExtension: "png",
+      fileExtension: "html",
       color: "purple"
     }
   ];
 
-  const generateCSV = () => {
-    const headers = ["SLA Name", "Type", "Threshold", "Current", "Compliance (%)", "Status", "Active"];
-    const rows = slaData.map(sla => [
-      sla.name,
-      sla.type,
-      sla.threshold,
-      sla.current,
-      sla.compliance.toString(),
-      sla.status,
-      sla.isActive ? "Yes" : "No"
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(field => `"${field}"`).join(","))
-      .join("\n");
-
-    return csvContent;
-  };
-
-  const generatePDF = () => {
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
     try {
-      const doc = new jsPDF();
-      const currentDate = new Date().toLocaleDateString();
-      const breachedSLAs = slaData.filter(sla => sla.status === "breached");
-      const atRiskSLAs = slaData.filter(sla => sla.status === "at_risk");
-
-      // Title
-      doc.setFontSize(20);
-      doc.text("SLA Management Report", 20, 30);
-
-      // Generated date
-      doc.setFontSize(12);
-      doc.text(`Generated on: ${currentDate}`, 20, 45);
-
-      // Summary section
-      doc.setFontSize(16);
-      doc.text("Executive Summary", 20, 65);
-
-      doc.setFontSize(12);
-      let yPos = 80;
-      doc.text(`Total SLAs: ${slaData.length}`, 20, yPos);
-      doc.text(`Active SLAs: ${slaData.filter(sla => sla.isActive).length}`, 20, yPos += 10);
-      doc.text(`Overall Compliance: ${overallCompliance.toFixed(1)}%`, 20, yPos += 10);
-      doc.text(`Breached SLAs: ${breachedSLAs.length}`, 20, yPos += 10);
-      doc.text(`At Risk SLAs: ${atRiskSLAs.length}`, 20, yPos += 10);
-
-      // SLA Details section
-      yPos += 20;
-      doc.setFontSize(16);
-      doc.text("SLA Details", 20, yPos);
-
-      yPos += 15;
-      doc.setFontSize(10);
-      doc.text("Name", 20, yPos);
-      doc.text("Type", 80, yPos);
-      doc.text("Threshold", 120, yPos);
-      doc.text("Current", 160, yPos);
-      doc.text("Compliance", 185, yPos);
-
-      yPos += 10;
-
-      slaData.forEach((sla, index) => {
-        if (yPos > 270) { // New page if needed
-          doc.addPage();
-          yPos = 20;
-        }
-        doc.text(sla.name.substring(0, 18), 20, yPos);
-        doc.text(sla.type.substring(0, 10), 80, yPos);
-        doc.text(sla.threshold.substring(0, 10), 120, yPos);
-        doc.text(sla.current.substring(0, 8), 160, yPos);
-        doc.text(`${sla.compliance}%`, 185, yPos);
-        yPos += 10;
-      });
-
-      // Recommendations
-      if (breachedSLAs.length > 0 || atRiskSLAs.length > 0 || overallCompliance < 90) {
-        yPos += 15;
-        if (yPos > 250) {
-          doc.addPage();
-          yPos = 20;
-        }
-
-        doc.setFontSize(16);
-        doc.text("Recommendations", 20, yPos);
-
-        yPos += 15;
-        doc.setFontSize(11);
-
-        if (breachedSLAs.length > 0) {
-          doc.text(`- Address ${breachedSLAs.length} breached SLA(s) immediately`, 20, yPos);
-          yPos += 10;
-        }
-        if (atRiskSLAs.length > 0) {
-          doc.text(`- Monitor ${atRiskSLAs.length} at-risk SLA(s) closely`, 20, yPos);
-          yPos += 10;
-        }
-        if (overallCompliance < 90) {
-          doc.text("- Consider reviewing SLA thresholds and escalation policies", 20, yPos);
-        }
-      }
-
-      return doc;
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error in generatePDF:", error);
-      throw error;
+      throw new Error(`Failed to download file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
-  const generateExcel = () => {
-    const workbook = XLSX.utils.book_new();
+  const generateCSV = () => {
+    const headers = ["SLA Name", "Type", "Threshold", "Current", "Compliance (%)", "Status", "Active"];
+    const rows = slaData.map(sla => [
+      `"${sla.name}"`,
+      `"${sla.type}"`,
+      `"${sla.threshold}"`,
+      `"${sla.current}"`,
+      sla.compliance.toString(),
+      `"${sla.status}"`,
+      sla.isActive ? "Yes" : "No"
+    ]);
 
-    // SLA Overview sheet
-    const slaOverviewData = slaData.map(sla => ({
-      "SLA Name": sla.name,
-      "Type": sla.type,
-      "Threshold": sla.threshold,
-      "Current Value": sla.current,
-      "Compliance %": sla.compliance,
-      "Status": sla.status,
-      "Active": sla.isActive ? "Yes" : "No"
-    }));
-    const slaSheet = XLSX.utils.json_to_sheet(slaOverviewData);
-    XLSX.utils.book_append_sheet(workbook, slaSheet, "SLA Overview");
+    const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
+    
+    // Add summary at the top
+    const summary = [
+      "SLA Management Report Summary",
+      `Generated on: ${new Date().toLocaleDateString()}`,
+      `Total SLAs: ${slaData.length}`,
+      `Active SLAs: ${slaData.filter(sla => sla.isActive).length}`,
+      `Overall Compliance: ${overallCompliance.toFixed(1)}%`,
+      `Breached SLAs: ${slaData.filter(sla => sla.status === "breached").length}`,
+      `At Risk SLAs: ${slaData.filter(sla => sla.status === "at_risk").length}`,
+      "",
+      "SLA Details:"
+    ].join("\n");
 
-    // Summary sheet
-    const summaryData = [
-      { "Metric": "Total SLAs", "Value": slaData.length },
-      { "Metric": "Active SLAs", "Value": slaData.filter(sla => sla.isActive).length },
-      { "Metric": "Overall Compliance", "Value": `${overallCompliance.toFixed(1)}%` },
-      { "Metric": "Breached SLAs", "Value": slaData.filter(sla => sla.status === "breached").length },
-      { "Metric": "At Risk SLAs", "Value": slaData.filter(sla => sla.status === "at_risk").length },
-      { "Metric": "Generated Date", "Value": new Date().toLocaleDateString() }
-    ];
-    const summarySheet = XLSX.utils.json_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
-
-    return workbook;
+    return summary + "\n" + csvContent;
   };
 
-  const downloadFile = (content: string, filename: string, mimeType: string) => {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const generateHTML = () => {
+    const currentDate = new Date().toLocaleDateString();
+    const breachedSLAs = slaData.filter(sla => sla.status === "breached");
+    const atRiskSLAs = slaData.filter(sla => sla.status === "at_risk");
+    
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SLA Management Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; border-bottom: 3px solid #007bff; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        .summary { background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .summary-item { text-align: center; }
+        .summary-value { font-size: 24px; font-weight: bold; color: #007bff; }
+        .summary-label { color: #666; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #ddd; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .status-met { color: #28a745; font-weight: bold; }
+        .status-at-risk { color: #ffc107; font-weight: bold; }
+        .status-breached { color: #dc3545; font-weight: bold; }
+        .recommendations { background: #fff3cd; padding: 20px; border-radius: 6px; border-left: 4px solid #ffc107; }
+        .print-button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 20px 0; }
+        @media print { .print-button { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SLA Management Report</h1>
+        <p><strong>Generated on:</strong> ${currentDate}</p>
+        
+        <button class="print-button" onclick="window.print()">Print Report</button>
+        
+        <div class="summary">
+            <h2>Executive Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-value">${slaData.length}</div>
+                    <div class="summary-label">Total SLAs</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${slaData.filter(sla => sla.isActive).length}</div>
+                    <div class="summary-label">Active SLAs</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${overallCompliance.toFixed(1)}%</div>
+                    <div class="summary-label">Overall Compliance</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${breachedSLAs.length}</div>
+                    <div class="summary-label">Breached SLAs</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${atRiskSLAs.length}</div>
+                    <div class="summary-label">At Risk SLAs</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>SLA Details</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>SLA Name</th>
+                    <th>Type</th>
+                    <th>Threshold</th>
+                    <th>Current</th>
+                    <th>Compliance</th>
+                    <th>Status</th>
+                    <th>Active</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${slaData.map(sla => `
+                    <tr>
+                        <td>${sla.name}</td>
+                        <td>${sla.type}</td>
+                        <td>${sla.threshold}</td>
+                        <td>${sla.current}</td>
+                        <td>${sla.compliance}%</td>
+                        <td class="status-${sla.status}">${sla.status.replace('_', ' ').toUpperCase()}</td>
+                        <td>${sla.isActive ? 'Yes' : 'No'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+
+        ${(breachedSLAs.length > 0 || atRiskSLAs.length > 0 || overallCompliance < 90) ? `
+        <div class="recommendations">
+            <h2>Recommendations</h2>
+            <ul>
+                ${breachedSLAs.length > 0 ? `<li><strong>Critical:</strong> Address ${breachedSLAs.length} breached SLA(s) immediately</li>` : ''}
+                ${atRiskSLAs.length > 0 ? `<li><strong>Warning:</strong> Monitor ${atRiskSLAs.length} at-risk SLA(s) closely</li>` : ''}
+                ${overallCompliance < 90 ? `<li><strong>Review:</strong> Consider reviewing SLA thresholds and escalation policies</li>` : ''}
+            </ul>
+        </div>
+        ` : ''}
+        
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+            Report generated by SLA Management System on ${currentDate}
+        </div>
+    </div>
+</body>
+</html>`;
+  };
+
+  const generateExcel = () => {
+    // Create a simple Excel-compatible HTML format
+    const currentDate = new Date().toLocaleDateString();
+    
+    let content = `
+<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Worksheet ss:Name="SLA Report">
+  <Table>
+   <Row>
+    <Cell><Data ss:Type="String">SLA Management Report</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">Generated on: ${currentDate}</Data></Cell>
+   </Row>
+   <Row></Row>
+   <Row>
+    <Cell><Data ss:Type="String">Summary</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">Total SLAs</Data></Cell>
+    <Cell><Data ss:Type="Number">${slaData.length}</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">Active SLAs</Data></Cell>
+    <Cell><Data ss:Type="Number">${slaData.filter(sla => sla.isActive).length}</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">Overall Compliance</Data></Cell>
+    <Cell><Data ss:Type="String">${overallCompliance.toFixed(1)}%</Data></Cell>
+   </Row>
+   <Row></Row>
+   <Row>
+    <Cell><Data ss:Type="String">SLA Name</Data></Cell>
+    <Cell><Data ss:Type="String">Type</Data></Cell>
+    <Cell><Data ss:Type="String">Threshold</Data></Cell>
+    <Cell><Data ss:Type="String">Current</Data></Cell>
+    <Cell><Data ss:Type="String">Compliance</Data></Cell>
+    <Cell><Data ss:Type="String">Status</Data></Cell>
+    <Cell><Data ss:Type="String">Active</Data></Cell>
+   </Row>`;
+
+    slaData.forEach(sla => {
+      content += `
+   <Row>
+    <Cell><Data ss:Type="String">${sla.name}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.type}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.threshold}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.current}</Data></Cell>
+    <Cell><Data ss:Type="Number">${sla.compliance}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.status}</Data></Cell>
+    <Cell><Data ss:Type="String">${sla.isActive ? 'Yes' : 'No'}</Data></Cell>
+   </Row>`;
+    });
+
+    content += `
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    return content;
+  };
+
+  const generatePDF = () => {
+    // Generate HTML content that's optimized for PDF printing
+    const currentDate = new Date().toLocaleDateString();
+    const breachedSLAs = slaData.filter(sla => sla.status === "breached");
+    const atRiskSLAs = slaData.filter(sla => sla.status === "at_risk");
+    
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SLA Management Report - PDF</title>
+    <style>
+        @page { margin: 20mm; size: A4; }
+        body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; margin: 0; }
+        h1 { font-size: 24px; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 5px; }
+        h2 { font-size: 18px; margin: 20px 0 10px 0; color: #444; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
+        .summary-box { border: 1px solid #ddd; padding: 15px; text-align: center; }
+        .summary-value { font-size: 20px; font-weight: bold; color: #007bff; }
+        .summary-label { font-size: 11px; color: #666; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10px; }
+        th, td { padding: 8px 5px; text-align: left; border: 1px solid #ddd; }
+        th { background-color: #f5f5f5; font-weight: bold; }
+        .recommendations { background: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #ffc107; }
+        .page-break { page-break-before: always; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SLA Management Report</h1>
+        <p>Generated on: ${currentDate}</p>
+    </div>
+
+    <h2>Executive Summary</h2>
+    <div class="summary">
+        <div class="summary-box">
+            <div class="summary-value">${slaData.length}</div>
+            <div class="summary-label">Total SLAs</div>
+        </div>
+        <div class="summary-box">
+            <div class="summary-value">${overallCompliance.toFixed(1)}%</div>
+            <div class="summary-label">Overall Compliance</div>
+        </div>
+        <div class="summary-box">
+            <div class="summary-value">${breachedSLAs.length}</div>
+            <div class="summary-label">Breached SLAs</div>
+        </div>
+    </div>
+
+    <h2>SLA Details</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>SLA Name</th>
+                <th>Type</th>
+                <th>Threshold</th>
+                <th>Current</th>
+                <th>Compliance</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${slaData.map(sla => `
+                <tr>
+                    <td>${sla.name}</td>
+                    <td>${sla.type}</td>
+                    <td>${sla.threshold}</td>
+                    <td>${sla.current}</td>
+                    <td>${sla.compliance}%</td>
+                    <td>${sla.status.replace('_', ' ').toUpperCase()}</td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table>
+
+    ${(breachedSLAs.length > 0 || atRiskSLAs.length > 0 || overallCompliance < 90) ? `
+    <div class="recommendations">
+        <h2>Recommendations</h2>
+        <ul>
+            ${breachedSLAs.length > 0 ? `<li>Address ${breachedSLAs.length} breached SLA(s) immediately</li>` : ''}
+            ${atRiskSLAs.length > 0 ? `<li>Monitor ${atRiskSLAs.length} at-risk SLA(s) closely</li>` : ''}
+            ${overallCompliance < 90 ? `<li>Consider reviewing SLA thresholds and escalation policies</li>` : ''}
+        </ul>
+    </div>
+    ` : ''}
+
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>`;
   };
 
   const handleExport = async (format: ExportFormat) => {
@@ -241,40 +412,49 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
       const filename = `sla-report-${timestamp}.${format.fileExtension}`;
 
       // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      let content = "";
+      let mimeType = "";
 
       switch (format.id) {
         case "csv":
-          const csvContent = generateCSV();
-          downloadFile(csvContent, filename, "text/csv");
+          content = generateCSV();
+          mimeType = "text/csv;charset=utf-8;";
           break;
 
-        case "pdf":
-          try {
-            console.log("Starting PDF generation...");
-            const pdfDoc = generatePDF();
-            console.log("PDF generated successfully, saving...");
-            pdfDoc.save(filename);
-            console.log("PDF save called successfully");
-          } catch (pdfError) {
-            console.error("PDF generation error:", pdfError);
-            throw new Error(`PDF generation failed: ${pdfError instanceof Error ? pdfError.message : 'Unknown PDF error'}`);
-          }
+        case "html":
+          content = generateHTML();
+          mimeType = "text/html;charset=utf-8;";
           break;
 
         case "excel":
-          const excelWorkbook = generateExcel();
-          XLSX.writeFile(excelWorkbook, filename);
+          content = generateExcel();
+          mimeType = "application/vnd.ms-excel;charset=utf-8;";
           break;
 
-        case "png":
-          // For now, show a message about chart export
+        case "pdf":
+          content = generatePDF();
+          mimeType = "text/html;charset=utf-8;";
+          // For PDF, we'll open in new window for printing
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(content);
+            printWindow.document.close();
+          } else {
+            throw new Error("Popup blocked. Please allow popups for PDF export.");
+          }
+          
           toast({
-            title: "Chart Export",
-            description: "Chart image export will be available in a future update",
+            title: "PDF Ready",
+            description: "PDF opened in new window. Use your browser's print function to save as PDF.",
           });
+          
+          setTimeout(() => onClose(), 1000);
           return;
       }
+
+      downloadFile(content, filename, mimeType);
 
       toast({
         title: "Export Successful",
@@ -348,7 +528,7 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className={`
-                    p-4 border rounded-lg cursor-pointer transition-all duration-200
+                    p-4 border rounded-lg cursor-pointer transition-all duration-200 
                     hover:border-primary hover:shadow-md
                     ${isCurrentlyGenerating ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-slate-700'}
                   `}
@@ -392,7 +572,7 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
             <div className="flex items-start space-x-2">
               <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="text-xs text-blue-800 dark:text-blue-200">
-                <p className="font-medium">Report includes:</p>
+                <p className="font-medium">All formats include:</p>
                 <ul className="mt-1 space-y-1">
                   <li>• Current SLA status and compliance metrics</li>
                   <li>• Breach analysis and escalation policies</li>
