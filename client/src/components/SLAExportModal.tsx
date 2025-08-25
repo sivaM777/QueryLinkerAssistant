@@ -263,7 +263,7 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
             
             {exportFormats.map((format, index) => {
               const Icon = format.icon;
-              const isGenerating = isGenerating === format.id;
+              const isCurrentlyGenerating = isGenerating === format.id;
               
               return (
                 <motion.div
@@ -272,11 +272,11 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className={`
-                    p-4 border rounded-lg cursor-pointer transition-all duration-200 
+                    p-4 border rounded-lg cursor-pointer transition-all duration-200
                     hover:border-primary hover:shadow-md
-                    ${isGenerating ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-slate-700'}
+                    ${isCurrentlyGenerating ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-slate-700'}
                   `}
-                  onClick={() => !isGenerating && handleExport(format)}
+                  onClick={() => !isCurrentlyGenerating && handleExport(format)}
                   data-testid={`export-format-${format.id}`}
                 >
                   <div className="flex items-center justify-between">
@@ -294,7 +294,7 @@ export default function SLAExportModal({ isOpen, onClose, slaData, overallCompli
                       <Badge variant="outline" className="text-xs">
                         .{format.fileExtension}
                       </Badge>
-                      {isGenerating ? (
+                      {isCurrentlyGenerating ? (
                         <div className="flex items-center space-x-2">
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
                           <span className="text-xs text-primary">Generating...</span>
