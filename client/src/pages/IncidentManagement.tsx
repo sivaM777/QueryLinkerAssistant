@@ -215,9 +215,9 @@ export default function IncidentManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Resolved Today</p>
-                <p className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-green-600">
                   {isLoading ? <Skeleton className="h-8 w-16" /> : metrics?.resolvedToday || 0}
-                </p>
+                </div>
               </div>
               <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
                 <CheckCircle className="h-6 w-6 text-green-600" />
