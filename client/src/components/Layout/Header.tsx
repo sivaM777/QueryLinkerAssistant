@@ -18,7 +18,8 @@ export default function Header({ onSearchOpen }: HeaderProps = {}) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: notifications } = useQuery<any[]>({
-    queryKey: ["/api/notifications", { unread: true }],
+    queryKey: ["/api/notifications"],
+    queryFn: () => apiRequest("GET", "/api/notifications?unread=true"),
   });
 
   const toggleTheme = () => {
