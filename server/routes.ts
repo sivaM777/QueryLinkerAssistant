@@ -14,6 +14,8 @@ import {
 } from "@shared/schema";
 import { syncService } from './connectors';
 import { syncScheduler } from './scheduler';
+import { googleMeetService } from './googleMeetService';
+import { insertGoogleMeetingSchema } from '@shared/schema';
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -475,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const authUrls = {
         slack: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=channels:read,chat:write,users:read&redirect_uri=${encodeURIComponent(redirectUri)}`,
-        googlemeet: `https://accounts.google.com/oauth/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/meetings.space.created&access_type=offline`,
+        googlemeet: googleMeetService.getAuthUrl(),
         zendesk: `https://${process.env.ZENDESK_SUBDOMAIN}.zendesk.com/oauth/authorizations/new?response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&client_id=${process.env.ZENDESK_CLIENT_ID}&scope=read`,
         notion: `https://api.notion.com/v1/oauth/authorize?client_id=${process.env.NOTION_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}`,
         linear: `https://linear.app/oauth/authorize?client_id=${process.env.LINEAR_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read&response_type=code`
@@ -623,6 +625,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { channel, text } = req.body;
     console.log(`Mock Slack message sent to ${channel}: ${text}`);
     res.json({ success: true, timestamp: Date.now() });
+  });
+
+  // Google Meet Authentication Routes
+  app.get('/api/auth/google/login', async (req, res) => {
+    try {
+      const authUrl = googleMeetService.getAuthUrl();
+      res.json({ authUrl, redirectUri: `${req.protocol}://${req.get('host')}/api/auth/google/callback` });
+    } catch (error) {
+      console.error('Error generating Google auth URL:', error);
+      res.status(500).json({ message: 'Failed to generate auth URL' });
+    }
+  });
+
+  app.post('/api/auth/google/callback', async (req, res) => {
+    try {
+      const { code, userId } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Authorization code is required' });
+      }
+
+      // For demo purposes, use a mock userId. In production, get from authenticated session
+      const mockUserId = userId || `user_${Date.now()}`;
+
+      const tokenData = await googleMeetService.exchangeCodeForTokens(code);
+      await googleMeetService.storeUserTokens(mockUserId, {
+        userId: mockUserId,
+        ...tokenData
+      });
+
+      res.json({ 
+        success: true, 
+        message: 'Successfully authenticated with Google',
+        userId: mockUserId
+      });
+    } catch (error) {
+      console.error('Error handling Google auth callback:', error);
+      res.status(500).json({ message: 'Authentication failed' });
+    }
+  });
+
+  app.get('/api/auth/google/status/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const tokens = await googleMeetService.getUserTokens(userId);
+      
+      res.json({
+        authenticated: !!tokens,
+        userId,
+        hasTokens: !!tokens
+      });
+    } catch (error) {
+      console.error('Error checking Google auth status:', error);
+      res.status(500).json({ message: 'Failed to check auth status' });
+    }
+  });
+
+  // Google Meet Management Routes
+  app.post('/api/googlemeet/meetings', async (req, res) => {
+    try {
+      const meetingData = insertGoogleMeetingSchema.omit({ 
+        calendarEventId: true, 
+        meetingId: true, 
+        meetLink: true,
+        status: true,
+        metadata: true
+      }).parse(req.body);
+      
+      // For demo purposes, use a mock userId. In production, get from authenticated session
+      const userId = req.body.userId || `user_${Date.now()}`;
+
+      const meeting = await googleMeetService.createMeeting(userId, {
+        title: meetingData.title,
+        description: meetingData.description || undefined,
+        startTime: new Date(meetingData.startTime),
+        endTime: new Date(meetingData.endTime),
+        attendees: meetingData.attendees as string[] || [],
+        incidentId: meetingData.incidentId || undefined,
+        systemId: meetingData.systemId || undefined
+      });
+
+      res.status(201).json(meeting);
+    } catch (error) {
+      console.error('Error creating Google Meet meeting:', error);
+      res.status(500).json({ 
+        message: 'Failed to create meeting',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/googlemeet/meetings/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const meetings = await googleMeetService.getUserMeetings(userId, limit);
+      res.json(meetings);
+    } catch (error) {
+      console.error('Error fetching user meetings:', error);
+      res.status(500).json({ message: 'Failed to fetch meetings' });
+    }
+  });
+
+  app.get('/api/googlemeet/meetings/meeting/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const meeting = await storage.getGoogleMeeting(id);
+      
+      if (!meeting) {
+        return res.status(404).json({ message: 'Meeting not found' });
+      }
+      
+      res.json(meeting);
+    } catch (error) {
+      console.error('Error fetching meeting:', error);
+      res.status(500).json({ message: 'Failed to fetch meeting' });
+    }
+  });
+
+  app.put('/api/googlemeet/meetings/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { userId, ...updates } = req.body;
+      
+      const result = await googleMeetService.updateMeeting(userId, id, {
+        title: updates.title,
+        description: updates.description,
+        startTime: updates.startTime ? new Date(updates.startTime) : undefined,
+        endTime: updates.endTime ? new Date(updates.endTime) : undefined
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error updating meeting:', error);
+      res.status(500).json({ 
+        message: 'Failed to update meeting',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.delete('/api/googlemeet/meetings/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { userId } = req.body;
+      
+      const result = await googleMeetService.cancelMeeting(userId, id);
+      res.json(result);
+    } catch (error) {
+      console.error('Error cancelling meeting:', error);
+      res.status(500).json({ 
+        message: 'Failed to cancel meeting',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   });
 
   app.get('/api/integrations/googlemeet/meetings', async (req, res) => {

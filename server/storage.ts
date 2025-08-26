@@ -13,6 +13,8 @@ import {
   incidentUpdates,
   serviceComponents,
   incidentMetrics,
+  googleMeetings,
+  googleTokens,
   type User,
   type UpsertUser,
   type System,
@@ -39,6 +41,10 @@ import {
   type InsertServiceComponent,
   type IncidentMetric,
   type InsertIncidentMetric,
+  type GoogleMeeting,
+  type InsertGoogleMeeting,
+  type GoogleToken,
+  type InsertGoogleToken,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, gte, lte, like, ilike, or } from "drizzle-orm";
@@ -142,6 +148,15 @@ export interface IStorage {
   getActiveIncidents(): Promise<Incident[]>;
   getIncidentsByStatus(status: string): Promise<Incident[]>;
   getIncidentsBySeverity(severity: string): Promise<Incident[]>;
+  
+  // Google Meet operations
+  storeGoogleTokens(userId: string, tokenData: InsertGoogleToken): Promise<GoogleToken>;
+  getGoogleTokens(userId: string): Promise<GoogleToken | undefined>;
+  createGoogleMeeting(meeting: InsertGoogleMeeting): Promise<GoogleMeeting>;
+  getGoogleMeeting(id: number): Promise<GoogleMeeting | undefined>;
+  getUserGoogleMeetings(userId: string, limit?: number): Promise<GoogleMeeting[]>;
+  updateGoogleMeeting(id: number, updates: Partial<InsertGoogleMeeting>): Promise<GoogleMeeting>;
+  deleteGoogleMeeting(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -944,6 +959,8 @@ class MemoryStorage implements IStorage {
   protected incidentUpdates: IncidentUpdate[] = [];
   protected serviceComponents: ServiceComponent[] = [];
   protected incidentMetrics: IncidentMetric[] = [];
+  protected googleMeetings: GoogleMeeting[] = [];
+  protected googleTokens: GoogleToken[] = [];
   protected idCounter = 1;
 
   // User operations
@@ -1294,6 +1311,68 @@ class MemoryStorage implements IStorage {
   async getIncidentsBySeverity(severity: string): Promise<Incident[]> { 
     return this.incidents.filter(i => i.severity === severity && i.isActive);
   }
+
+  // Google Meet operations
+  async storeGoogleTokens(userId: string, tokenData: InsertGoogleToken): Promise<GoogleToken> {
+    const existing = this.googleTokens.find(t => t.userId === userId);
+    if (existing) {
+      Object.assign(existing, tokenData, { updatedAt: new Date() });
+      return existing;
+    } else {
+      const newToken: GoogleToken = {
+        ...tokenData,
+        id: this.idCounter++,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.googleTokens.push(newToken);
+      return newToken;
+    }
+  }
+
+  async getGoogleTokens(userId: string): Promise<GoogleToken | undefined> {
+    return this.googleTokens.find(t => t.userId === userId);
+  }
+
+  async createGoogleMeeting(meeting: InsertGoogleMeeting): Promise<GoogleMeeting> {
+    const newMeeting: GoogleMeeting = {
+      ...meeting,
+      id: this.idCounter++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.googleMeetings.push(newMeeting);
+    return newMeeting;
+  }
+
+  async getGoogleMeeting(id: number): Promise<GoogleMeeting | undefined> {
+    return this.googleMeetings.find(m => m.id === id);
+  }
+
+  async getUserGoogleMeetings(userId: string, limit = 10): Promise<GoogleMeeting[]> {
+    return this.googleMeetings
+      .filter(m => m.userId === userId)
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+      .slice(0, limit);
+  }
+
+  async updateGoogleMeeting(id: number, updates: Partial<InsertGoogleMeeting>): Promise<GoogleMeeting> {
+    const meeting = this.googleMeetings.find(m => m.id === id);
+    if (!meeting) {
+      throw new Error('Meeting not found');
+    }
+    Object.assign(meeting, updates, { updatedAt: new Date() });
+    return meeting;
+  }
+
+  async deleteGoogleMeeting(id: number): Promise<boolean> {
+    const index = this.googleMeetings.findIndex(m => m.id === id);
+    if (index === -1) {
+      return false;
+    }
+    this.googleMeetings.splice(index, 1);
+    return true;
+  }
 }
 
 // Enhanced persistent storage that mimics database behavior
@@ -1330,6 +1409,8 @@ class PersistentStorage extends MemoryStorage {
         incidentUpdates: this.incidentUpdates,
         serviceComponents: this.serviceComponents,
         incidentMetrics: this.incidentMetrics,
+        googleMeetings: this.googleMeetings,
+        googleTokens: this.googleTokens,
         idCounter: this.idCounter,
       };
       
@@ -1366,6 +1447,8 @@ class PersistentStorage extends MemoryStorage {
         this.incidentUpdates = data.incidentUpdates || [];
         this.serviceComponents = data.serviceComponents || [];
         this.incidentMetrics = data.incidentMetrics || [];
+        this.googleMeetings = data.googleMeetings || [];
+        this.googleTokens = data.googleTokens || [];
         this.idCounter = data.idCounter || 1;
         
         console.log(`✓ Loaded database with ${this.users.size} users, ${this.systems.length} systems, ${this.solutions.length} solutions, ${this.incidents.length} incidents`);

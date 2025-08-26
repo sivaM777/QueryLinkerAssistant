@@ -441,3 +441,83 @@ export type ServiceComponent = typeof serviceComponents.$inferSelect;
 export type InsertServiceComponent = z.infer<typeof insertServiceComponentSchema>;
 export type IncidentMetric = typeof incidentMetrics.$inferSelect;
 export type InsertIncidentMetric = z.infer<typeof insertIncidentMetricSchema>;
+
+// Google Meet meetings table
+export const googleMeetings = pgTable("google_meetings", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  calendarEventId: varchar("calendar_event_id").notNull(),
+  meetingId: varchar("meeting_id"),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  meetLink: text("meet_link"),
+  status: varchar("status", { length: 50 }).default('scheduled'), // scheduled, active, ended, cancelled
+  attendees: jsonb("attendees").default('[]'),
+  incidentId: integer("incident_id").references(() => incidents.id),
+  systemId: integer("system_id").references(() => systems.id),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_google_meetings_user").on(table.userId),
+  index("idx_google_meetings_calendar_event").on(table.calendarEventId),
+  index("idx_google_meetings_start_time").on(table.startTime),
+]);
+
+// Google OAuth tokens for users
+export const googleTokens = pgTable("google_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at").notNull(),
+  scope: text("scope"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_google_tokens_user").on(table.userId),
+]);
+
+// Google Meet relations
+export const googleMeetingsRelations = relations(googleMeetings, ({ one }) => ({
+  user: one(users, {
+    fields: [googleMeetings.userId],
+    references: [users.id],
+  }),
+  incident: one(incidents, {
+    fields: [googleMeetings.incidentId],
+    references: [incidents.id],
+  }),
+  system: one(systems, {
+    fields: [googleMeetings.systemId],
+    references: [systems.id],
+  }),
+}));
+
+export const googleTokensRelations = relations(googleTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [googleTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+// Google Meet insert schemas
+export const insertGoogleMeetingSchema = createInsertSchema(googleMeetings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGoogleTokenSchema = createInsertSchema(googleTokens).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Google Meet types
+export type GoogleMeeting = typeof googleMeetings.$inferSelect;
+export type InsertGoogleMeeting = z.infer<typeof insertGoogleMeetingSchema>;
+export type GoogleToken = typeof googleTokens.$inferSelect;
+export type InsertGoogleToken = z.infer<typeof insertGoogleTokenSchema>;
