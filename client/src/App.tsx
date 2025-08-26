@@ -47,6 +47,8 @@ function Router() {
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/analytics" component={Analytics} />
+              <Route path="/analytics/advanced" component={AdvancedAnalytics} />
+              <Route path="/servicenow/incidents" component={IncidentManagement} />
               <Route path="/integrations" component={SystemIntegrations} />
               <Route path="/sla" component={SLAManagement} />
               <Route path="/knowledge" component={KnowledgeBase} />
