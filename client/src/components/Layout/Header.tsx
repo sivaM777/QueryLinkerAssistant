@@ -7,6 +7,7 @@ import { Bell, Moon, Sun, Search } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface HeaderProps {
   onSearchOpen?: () => void;
