@@ -613,6 +613,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notifications endpoint
+  app.get('/api/notifications', async (req, res) => {
+    try {
+      // Mock notifications data
+      const notifications = [
+        {
+          id: 1,
+          title: "System Maintenance Scheduled",
+          message: "Maintenance window scheduled for tonight at 2 AM EST",
+          type: "info",
+          read: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
+        },
+        {
+          id: 2,
+          title: "Incident Resolved",
+          message: "Network connectivity issue has been resolved",
+          type: "success",
+          read: true,
+          createdAt: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
+        }
+      ];
+
+      // Filter by unread if requested
+      const unreadOnly = req.query.unread === 'true';
+      const filteredNotifications = unreadOnly
+        ? notifications.filter(n => !n.read)
+        : notifications;
+
+      res.json(filteredNotifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
   // Integration API endpoints (mock data for embedded apps)
   app.get('/api/integrations/slack/channels', async (req, res) => {
     res.json([
