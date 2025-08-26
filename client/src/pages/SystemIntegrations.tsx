@@ -149,7 +149,7 @@ export default function SystemIntegrations() {
 
   const availableSystems = [
     { value: "slack", label: "Slack", icon: "💬" },
-    { value: "teams", label: "Microsoft Teams", icon: "💬" },
+    { value: "googlemeet", label: "Google Meet", icon: "📹" },
     { value: "servicenow-itsm", label: "ServiceNow ITSM", icon: "📋" },
     { value: "zendesk", label: "Zendesk", icon: "📋" },
     { value: "linear", label: "Linear", icon: "📋" },
