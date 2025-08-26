@@ -187,7 +187,7 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-slate-700"
+              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-200 hover:scale-105"
               onClick={() => {
                 if (isMobile) {
                   setOpenMobile(false);
@@ -196,8 +196,9 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
                 }
               }}
               data-testid="hamburger-menu"
+              title="Toggle Sidebar"
             >
-              <Menu className="h-4 w-4" />
+              <Menu className="h-4 w-4 transition-transform duration-200" />
             </Button>
             <span>Home</span>
             <span>/</span>
