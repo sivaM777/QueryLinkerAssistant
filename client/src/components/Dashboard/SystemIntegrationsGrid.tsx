@@ -497,51 +497,66 @@ export default function SystemIntegrationsGrid() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-between gap-2 mt-auto pt-4 border-t border-gray-200 dark:border-slate-700">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => syncMutation.mutate(system.id)}
-                        disabled={syncMutation.isPending}
-                        data-testid={`sync-button-${system.type}`}
-                        className="flex-1"
-                      >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-                        Sync
-                      </Button>
-                      
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            toast({
-                              title: "Settings",
-                              description: `${system.name} settings will be available in a future update`,
-                            });
-                          }}
-                          data-testid={`settings-button-${system.type}`}
-                        >
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                          onClick={async () => {
-                            if (confirm(`Are you sure you want to remove ${system.name}? All associated solutions will be deleted.`)) {
-                              try {
-                                await deleteMutation.mutateAsync(system.id);
-                              } catch (error) {
-                                console.error('Delete failed:', error);
+                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-slate-700">
+                      <div className="flex items-center justify-between gap-2">
+                        {system.isActive && ['slack', 'googlemeet', 'zendesk', 'notion', 'linear'].includes(system.type) ? (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setLocation(`/workspace/${system.type}`)}
+                            data-testid={`workspace-button-${system.type}`}
+                            className="flex-1"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Workspace
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => syncMutation.mutate(system.id)}
+                            disabled={syncMutation.isPending}
+                            data-testid={`sync-button-${system.type}`}
+                            className="flex-1"
+                          >
+                            <RefreshCw className={`h-4 w-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+                            Sync
+                          </Button>
+                        )}
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              toast({
+                                title: "Settings",
+                                description: `${system.name} settings will be available in a future update`,
+                              });
+                            }}
+                            data-testid={`settings-button-${system.type}`}
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            onClick={async () => {
+                              if (confirm(`Are you sure you want to remove ${system.name}? All associated solutions will be deleted.`)) {
+                                try {
+                                  await deleteMutation.mutateAsync(system.id);
+                                } catch (error) {
+                                  console.error('Delete failed:', error);
+                                }
                               }
-                            }
-                          }}
-                          disabled={deleteMutation.isPending}
-                          data-testid={`delete-button-${system.type}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                            }}
+                            disabled={deleteMutation.isPending}
+                            data-testid={`delete-button-${system.type}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
