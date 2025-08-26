@@ -126,15 +126,18 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
                           : "text-slate-400 group-hover:text-white"
                       )} />
                       <span className={cn(
-                        "text-xs mt-1 font-medium transition-all duration-300",
-                        isActive 
-                          ? "text-white" 
+                        "text-xs mt-1 font-medium transition-all duration-300 text-center leading-tight",
+                        isActive
+                          ? "text-white"
                           : "text-slate-400 group-hover:text-white"
                       )}>
-                        {item.name === "System Integrations" ? "Systems" : 
-                         item.name === "SLA Management" ? "SLA" : 
+                        {item.name === "System Integrations" ? "Systems" :
+                         item.name === "SLA Management" ? "SLA" :
                          item.name === "Dashboard" ? "Home" :
-                         item.name === "Analytics" ? "Stats" : item.name}
+                         item.name === "Analytics" ? "Stats" :
+                         item.name === "Incident Management" ? "Incidents" :
+                         item.name === "Advanced Analytics" ? "Advanced" :
+                         item.name}
                       </span>
                       {item.badge && !isActive && (
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full shadow-lg animate-pulse" />
