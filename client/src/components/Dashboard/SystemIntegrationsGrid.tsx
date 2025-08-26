@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Settings, Trash2, RefreshCw, Info, Star, Clock, Database } from "lucide-react";
+import { Settings, Trash2, RefreshCw, Info, Star, Clock, Database, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { useState } from "react";
