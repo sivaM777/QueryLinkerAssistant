@@ -371,13 +371,13 @@ export default function SystemIntegrationsGrid() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                className="group"
+                className="group h-full"
               >
-                <Card 
-                  className={`h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${config.bgColor} ${config.borderColor} border-2`}
+                <Card
+                  className={`h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${config.bgColor} ${config.borderColor} border-2 flex flex-col`}
                   data-testid={`system-card-${system.type}`}
                 >
-                  <CardContent className="p-6 flex flex-col h-full">
+                  <CardContent className="p-6 flex flex-col h-full flex-1">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3 min-w-0 flex-1">
