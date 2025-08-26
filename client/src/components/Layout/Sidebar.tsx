@@ -354,18 +354,10 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
 }
 
 export default function Sidebar() {
-  const { isMobile, openMobile, setOpenMobile } = useSidebar();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isMobile, openMobile, setOpenMobile, state, open } = useSidebar();
 
-  // Handle global state for collapse
-  useEffect(() => {
-    const handleCollapseToggle = () => {
-      setIsCollapsed(prev => !prev);
-    };
-    
-    window.addEventListener('toggle-sidebar', handleCollapseToggle);
-    return () => window.removeEventListener('toggle-sidebar', handleCollapseToggle);
-  }, []);
+  // Determine if collapsed based on context state
+  const isCollapsed = state === "collapsed";
 
   if (isMobile) {
     return (
@@ -383,7 +375,13 @@ export default function Sidebar() {
   }, [isCollapsed]);
 
   return (
-    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 ease-in-out hidden lg:block`}>
+    <aside
+      className={cn(
+        "bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 ease-in-out hidden lg:block",
+        isCollapsed ? 'w-20' : 'w-64'
+      )}
+      data-state={state}
+    >
       <SidebarContent sidebarCollapsed={isCollapsed} />
     </aside>
   );
