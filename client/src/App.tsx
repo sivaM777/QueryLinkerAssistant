@@ -14,6 +14,8 @@ import Settings from "@/pages/Settings";
 import Activity from "@/pages/Activity";
 import Landing from "@/pages/Landing";
 import SystemWorkspace from "@/pages/SystemWorkspace";
+import IncidentManagement from "@/pages/IncidentManagement";
+import AdvancedAnalytics from "@/pages/AdvancedAnalytics";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
 import { useState } from "react";
