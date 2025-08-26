@@ -475,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const authUrls = {
         slack: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=channels:read,chat:write,users:read&redirect_uri=${encodeURIComponent(redirectUri)}`,
-        teams: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${process.env.TEAMS_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https://graph.microsoft.com/User.Read`,
+        googlemeet: `https://accounts.google.com/oauth/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/meetings.space.created&access_type=offline`,
         zendesk: `https://${process.env.ZENDESK_SUBDOMAIN}.zendesk.com/oauth/authorizations/new?response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&client_id=${process.env.ZENDESK_CLIENT_ID}&scope=read`,
         notion: `https://api.notion.com/v1/oauth/authorize?client_id=${process.env.NOTION_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}`,
         linear: `https://linear.app/oauth/authorize?client_id=${process.env.LINEAR_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read&response_type=code`
@@ -564,12 +564,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             messages: '/api/integrations/slack/messages'
           }
         },
-        teams: {
-          embedUrl: 'https://teams.microsoft.com',
-          features: ['chat', 'meetings', 'files'],
+        googlemeet: {
+          embedUrl: 'https://meet.google.com',
+          features: ['meetings', 'calendar', 'recordings'],
           apiEndpoints: {
-            meetings: '/api/integrations/teams/meetings',
-            chat: '/api/integrations/teams/chat'
+            meetings: '/api/integrations/googlemeet/meetings',
+            calendar: '/api/integrations/googlemeet/calendar'
           }
         },
         zendesk: {
@@ -625,25 +625,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, timestamp: Date.now() });
   });
 
-  app.get('/api/integrations/teams/meetings', async (req, res) => {
+  app.get('/api/integrations/googlemeet/meetings', async (req, res) => {
     res.json([
       {
-        id: 'M1',
+        id: 'GM1',
         title: 'Sprint Planning',
         startTime: '2024-01-15T15:00:00Z',
         endTime: '2024-01-15T16:00:00Z',
         attendees: 8,
-        status: 'upcoming'
+        status: 'upcoming',
+        meetLink: 'https://meet.google.com/abc-defg-hij'
       },
       {
-        id: 'M2',
+        id: 'GM2',
         title: 'Daily Standup',
         startTime: '2024-01-16T09:00:00Z',
         endTime: '2024-01-16T09:30:00Z',
         attendees: 12,
-        status: 'recurring'
+        status: 'recurring',
+        meetLink: 'https://meet.google.com/xyz-1234-uvw'
       }
     ]);
+  });
+
+  app.post('/api/integrations/googlemeet/create', async (req, res) => {
+    const { title, startTime, endTime, description } = req.body;
+    console.log(`Mock Google Meet created: ${title} from ${startTime} to ${endTime}`);
+    res.json({
+      success: true,
+      meeting: {
+        id: `GM_${Date.now()}`,
+        title,
+        startTime,
+        endTime,
+        meetLink: `https://meet.google.com/mock-${Math.random().toString(36).substr(2, 9)}`,
+        calendarEventId: `cal_${Date.now()}`
+      }
+    });
   });
 
   app.get('/api/integrations/zendesk/tickets', async (req, res) => {

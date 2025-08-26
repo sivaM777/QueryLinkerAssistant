@@ -282,7 +282,7 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
               {connectedSystemTypes.slice(0, 4).map((systemType: string) => {
                 const systemConfigs = {
                   slack: { name: "Slack", icon: "💬" },
-                  teams: { name: "Teams", icon: "💬" },
+                  googlemeet: { name: "Google Meet", icon: "📹" },
                   zendesk: { name: "Zendesk", icon: "📋" },
                   notion: { name: "Notion", icon: "📝" },
                   linear: { name: "Linear", icon: "📋" },

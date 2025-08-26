@@ -89,11 +89,11 @@ export default function SystemWorkspace() {
         color: "bg-purple-600",
         description: "Team communication and collaboration platform"
       },
-      teams: {
-        name: "Microsoft Teams",
-        icon: "💬",
+      googlemeet: {
+        name: "Google Meet",
+        icon: "📹",
         color: "bg-blue-600",
-        description: "Microsoft Teams meetings and chat"
+        description: "Video meetings and collaboration"
       },
       zendesk: {
         name: "Zendesk",

@@ -497,14 +497,14 @@ export class DatabaseStorage implements IStorage {
           status: "active",
         },
       ],
-      teams: [
+      googlemeet: [
         {
           systemId: system.id,
-          externalId: `TEAMS-${Math.floor(Math.random() * 1000)}`,
-          title: "Microsoft Teams integration setup",
-          content: "Configuring Microsoft Teams integrations and managing team communication.",
-          url: `https://teams.microsoft.com/l/entity/${Math.random().toString(36).substr(2, 9)}`,
-          tags: ["teams", "integration", "communication"],
+          externalId: `GOOGLEMEET-${Math.floor(Math.random() * 1000)}`,
+          title: "Google Meet integration setup",
+          content: "Configuring Google Meet integrations and managing video conferencing workflows.",
+          url: `https://meet.google.com/lookup/${Math.random().toString(36).substr(2, 9)}`,
+          tags: ["googlemeet", "integration", "meetings"],
           status: "active",
         },
       ],
