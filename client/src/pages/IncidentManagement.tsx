@@ -195,9 +195,9 @@ export default function IncidentManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Critical</p>
-                <p className="text-2xl font-bold text-red-600">
+                <div className="text-2xl font-bold text-red-600">
                   {isLoading ? <Skeleton className="h-8 w-16" /> : metrics?.criticalIncidents || 0}
-                </p>
+                </div>
               </div>
               <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-xl flex items-center justify-center">
                 <AlertCircle className="h-6 w-6 text-red-600" />
