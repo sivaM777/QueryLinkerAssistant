@@ -18,6 +18,7 @@ import {
   Link as LinkIcon,
   Zap,
   Menu,
+  ExternalLink,
 } from "lucide-react";
 import { useSystemFeatures } from "@/hooks/useSystemFeatures";
 import SearchModal from "@/components/SearchModal";
@@ -271,23 +272,38 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
           );
         })}
         
-        {/* System Features Section */}
+        {/* Connected Systems Section */}
         {connectedSystemTypes.length > 0 && (
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
             <p className="px-3 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-              System Features ({connectedSystemTypes.length} connected)
+              Connected Workspaces ({connectedSystemTypes.length})
             </p>
             <div className="space-y-1">
-              {availableFeatures.slice(0, 2).map((feature) => (
-                <div
-                  key={feature.id}
-                  className="px-3 py-2 text-sm text-gray-600 dark:text-slate-400 hover:text-primary cursor-pointer"
-                  title={feature.description}
-                >
-                  <span className="mr-2">{feature.icon}</span>
-                  {feature.name}
-                </div>
-              ))}
+              {connectedSystemTypes.slice(0, 4).map((systemType: string) => {
+                const systemConfigs = {
+                  slack: { name: "Slack", icon: "💬" },
+                  teams: { name: "Teams", icon: "💬" },
+                  zendesk: { name: "Zendesk", icon: "📋" },
+                  notion: { name: "Notion", icon: "📝" },
+                  linear: { name: "Linear", icon: "📋" },
+                  "servicenow-itsm": { name: "ServiceNow", icon: "☁️" }
+                };
+                const config = systemConfigs[systemType as keyof typeof systemConfigs] || { name: systemType, icon: "🔧" };
+                
+                return (
+                  <Link key={systemType} href={`/workspace/${systemType}`}>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start group transition-all duration-200 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                      data-testid={`workspace-nav-${systemType}`}
+                    >
+                      <span className="mr-3 text-sm">{config.icon}</span>
+                      <span className="font-medium text-sm">{config.name}</span>
+                      <ExternalLink className="ml-auto h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Button>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

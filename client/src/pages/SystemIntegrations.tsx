@@ -344,17 +344,30 @@ export default function SystemIntegrations() {
                   </div>
 
                   <div className="flex items-center justify-between mt-auto gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => syncMutation.mutate(system.id)}
-                      disabled={syncMutation.isPending}
-                      data-testid={`sync-button-${system.type}`}
-                      className="flex-shrink-0"
-                    >
-                      <RefreshCw className={`h-4 w-4 mr-1 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-                      Sync
-                    </Button>
+                    {system.isActive ? (
+                      <Link href={`/workspace/${system.type}`}>
+                        <Button
+                          size="sm"
+                          className="flex-shrink-0"
+                          data-testid={`workspace-button-${system.type}`}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Open Workspace
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => syncMutation.mutate(system.id)}
+                        disabled={syncMutation.isPending}
+                        data-testid={`sync-button-${system.type}`}
+                        className="flex-shrink-0"
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-1 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+                        Sync
+                      </Button>
+                    )}
 
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <Button

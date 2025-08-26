@@ -13,6 +13,7 @@ import KnowledgeBase from "@/pages/KnowledgeBase";
 import Settings from "@/pages/Settings";
 import Activity from "@/pages/Activity";
 import Landing from "@/pages/Landing";
+import SystemWorkspace from "@/pages/SystemWorkspace";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
 import { useState } from "react";
@@ -49,6 +50,7 @@ function Router() {
               <Route path="/knowledge" component={KnowledgeBase} />
               <Route path="/activity" component={Activity} />
               <Route path="/settings" component={Settings} />
+              <Route path="/workspace/:system" component={SystemWorkspace} />
               <Route component={NotFound} />
             </Switch>
           </div>

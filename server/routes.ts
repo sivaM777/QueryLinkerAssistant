@@ -68,10 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       console.log(`Attempting to delete system with ID: ${id}`);
 
-      // First delete all solutions from this system
-      await storage.deleteSolutionsBySystem(id);
-
-      // Then delete the system
+      // Delete the system (solutions will be handled by cascade)
       const deleted = await storage.deleteSystem(id);
 
       if (!deleted) {
@@ -105,9 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let deletedCount = 0;
 
       for (const system of systems) {
-        // Delete solutions first
-        await storage.deleteSolutionsBySystem(system.id);
-        // Then delete the system
+        // Delete the system (solutions will be handled by cascade)
         const deleted = await storage.deleteSystem(system.id);
         if (deleted) deletedCount++;
       }
@@ -142,9 +137,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update sync time
       await storage.updateSystemSyncTime(id);
-      
-      // Create mock solutions based on system type
-      await storage.createMockSolutionsForSystem(system);
       
       // Broadcast sync update via WebSocket
       wss.clients.forEach((client) => {
@@ -473,6 +465,208 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching incident metrics:", error);
       res.status(500).json({ message: "Failed to fetch incident metrics" });
     }
+  });
+
+  // OAuth Authentication routes for systems
+  app.get('/api/auth/:system/login', async (req, res) => {
+    try {
+      const { system } = req.params;
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/${system}/callback`;
+      
+      const authUrls = {
+        slack: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=channels:read,chat:write,users:read&redirect_uri=${encodeURIComponent(redirectUri)}`,
+        teams: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${process.env.TEAMS_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https://graph.microsoft.com/User.Read`,
+        zendesk: `https://${process.env.ZENDESK_SUBDOMAIN}.zendesk.com/oauth/authorizations/new?response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&client_id=${process.env.ZENDESK_CLIENT_ID}&scope=read`,
+        notion: `https://api.notion.com/v1/oauth/authorize?client_id=${process.env.NOTION_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}`,
+        linear: `https://linear.app/oauth/authorize?client_id=${process.env.LINEAR_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read&response_type=code`
+      };
+      
+      const authUrl = authUrls[system as keyof typeof authUrls];
+      if (!authUrl) {
+        return res.status(400).json({ message: 'Unsupported system' });
+      }
+      
+      res.json({ authUrl, redirectUri });
+    } catch (error) {
+      console.error(`Error generating ${req.params.system} auth URL:`, error);
+      res.status(500).json({ message: 'Failed to generate auth URL' });
+    }
+  });
+
+  app.post('/api/auth/:system/callback', async (req, res) => {
+    try {
+      const { system } = req.params;
+      const { code, state } = req.body;
+      
+      // Here you would exchange the code for access tokens
+      // For now, we'll simulate successful authentication
+      
+      // Store the authentication data (in a real app, you'd use a secure session store)
+      const authData = {
+        system,
+        accessToken: `mock_token_${system}_${Date.now()}`,
+        userId: `user_${system}_${Math.random().toString(36).substr(2, 9)}`,
+        authenticatedAt: new Date().toISOString()
+      };
+      
+      // Update the system to mark as authenticated
+      const systems = await storage.getSystems();
+      const systemRecord = systems.find(s => s.type === system);
+      if (systemRecord) {
+        await storage.updateSystem(systemRecord.id, { 
+          isActive: true,
+          lastSyncAt: new Date()
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Successfully authenticated with ${system}`,
+        authData: { system, userId: authData.userId }
+      });
+    } catch (error) {
+      console.error(`Error handling ${req.params.system} auth callback:`, error);
+      res.status(500).json({ message: 'Authentication failed' });
+    }
+  });
+
+  app.get('/api/auth/:system/status', async (req, res) => {
+    try {
+      const { system } = req.params;
+      
+      // Check if system is authenticated (in a real app, check session/database)
+      const systems = await storage.getSystems();
+      const systemRecord = systems.find(s => s.type === system);
+      
+      res.json({
+        authenticated: systemRecord?.isActive || false,
+        system,
+        lastSync: systemRecord?.lastSyncAt
+      });
+    } catch (error) {
+      console.error(`Error checking ${req.params.system} auth status:`, error);
+      res.status(500).json({ message: 'Failed to check auth status' });
+    }
+  });
+
+  // System workspace data endpoints
+  app.get('/api/systems/:system/workspace', async (req, res) => {
+    try {
+      const { system } = req.params;
+      
+      // Return workspace configuration for embedded apps
+      const workspaceConfigs = {
+        slack: {
+          embedUrl: 'https://app.slack.com/client',
+          features: ['channels', 'direct-messages', 'search'],
+          apiEndpoints: {
+            channels: '/api/integrations/slack/channels',
+            messages: '/api/integrations/slack/messages'
+          }
+        },
+        teams: {
+          embedUrl: 'https://teams.microsoft.com',
+          features: ['chat', 'meetings', 'files'],
+          apiEndpoints: {
+            meetings: '/api/integrations/teams/meetings',
+            chat: '/api/integrations/teams/chat'
+          }
+        },
+        zendesk: {
+          embedUrl: `https://${process.env.ZENDESK_SUBDOMAIN || 'demo'}.zendesk.com`,
+          features: ['tickets', 'knowledge-base', 'reports'],
+          apiEndpoints: {
+            tickets: '/api/integrations/zendesk/tickets',
+            users: '/api/integrations/zendesk/users'
+          }
+        },
+        notion: {
+          embedUrl: 'https://www.notion.so',
+          features: ['pages', 'databases', 'search'],
+          apiEndpoints: {
+            pages: '/api/integrations/notion/pages',
+            databases: '/api/integrations/notion/databases'
+          }
+        },
+        linear: {
+          embedUrl: 'https://linear.app',
+          features: ['issues', 'projects', 'roadmap'],
+          apiEndpoints: {
+            issues: '/api/integrations/linear/issues',
+            projects: '/api/integrations/linear/projects'
+          }
+        }
+      };
+      
+      const config = workspaceConfigs[system as keyof typeof workspaceConfigs];
+      if (!config) {
+        return res.status(400).json({ message: 'Unsupported system' });
+      }
+      
+      res.json(config);
+    } catch (error) {
+      console.error(`Error fetching ${req.params.system} workspace config:`, error);
+      res.status(500).json({ message: 'Failed to fetch workspace config' });
+    }
+  });
+
+  // Integration API endpoints (mock data for embedded apps)
+  app.get('/api/integrations/slack/channels', async (req, res) => {
+    res.json([
+      { id: 'C123', name: 'general', purpose: 'Company-wide announcements' },
+      { id: 'C124', name: 'development', purpose: 'Development discussions' },
+      { id: 'C125', name: 'support', purpose: 'Customer support' }
+    ]);
+  });
+
+  app.post('/api/integrations/slack/message', async (req, res) => {
+    const { channel, text } = req.body;
+    console.log(`Mock Slack message sent to ${channel}: ${text}`);
+    res.json({ success: true, timestamp: Date.now() });
+  });
+
+  app.get('/api/integrations/teams/meetings', async (req, res) => {
+    res.json([
+      {
+        id: 'M1',
+        title: 'Sprint Planning',
+        startTime: '2024-01-15T15:00:00Z',
+        endTime: '2024-01-15T16:00:00Z',
+        attendees: 8,
+        status: 'upcoming'
+      },
+      {
+        id: 'M2',
+        title: 'Daily Standup',
+        startTime: '2024-01-16T09:00:00Z',
+        endTime: '2024-01-16T09:30:00Z',
+        attendees: 12,
+        status: 'recurring'
+      }
+    ]);
+  });
+
+  app.get('/api/integrations/zendesk/tickets', async (req, res) => {
+    res.json([
+      {
+        id: 12345,
+        subject: 'Login issues with mobile app',
+        status: 'open',
+        priority: 'high',
+        requester: 'John Smith',
+        assignee: 'Support Team',
+        tags: ['mobile', 'authentication']
+      },
+      {
+        id: 12346,
+        subject: 'Feature request: Dark mode',
+        status: 'pending',
+        priority: 'low',
+        requester: 'Sarah Johnson',
+        assignee: 'Development Team',
+        tags: ['feature', 'ui']
+      }
+    ]);
   });
 
   // Trigger manual sync of all data sources
