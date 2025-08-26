@@ -380,7 +380,7 @@ export default function Sidebar() {
   }, [isCollapsed]);
 
   return (
-    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 hidden lg:block`}>
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-800 shadow-xl fixed left-0 top-0 h-full z-30 transition-all duration-300 ease-in-out hidden lg:block`}>
       <SidebarContent sidebarCollapsed={isCollapsed} />
     </aside>
   );
