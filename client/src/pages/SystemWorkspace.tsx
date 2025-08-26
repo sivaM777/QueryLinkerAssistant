@@ -17,13 +17,18 @@ import {
   MessageSquare,
   Calendar,
   FileText,
-  Search
+  Search,
+  Video,
+  Plus,
+  Clock,
+  Users
 } from "lucide-react";
 
 interface WorkspaceConfig {
-  embedUrl: string;
+  embedUrl: string | null;
   features: string[];
   apiEndpoints: Record<string, string>;
+  customInterface?: boolean;
 }
 
 interface AuthStatus {
@@ -80,6 +85,264 @@ export default function SystemWorkspace() {
       });
     },
   });
+
+  // Google Meet Custom Interface Component
+  function GoogleMeetInterface({ systemInfo }: { systemInfo: any }) {
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [newMeeting, setNewMeeting] = useState({
+      title: '',
+      description: '',
+      startTime: '',
+      endTime: '',
+      attendees: ''
+    });
+
+    const { data: meetings = [], isLoading: meetingsLoading } = useQuery({
+      queryKey: ['/api/integrations/googlemeet/meetings'],
+      enabled: authStatus?.authenticated,
+    });
+
+    const createMeetingMutation = useMutation({
+      mutationFn: async (meetingData: any) => {
+        return await apiRequest('/api/googlemeet/meetings', {
+          method: 'POST',
+          body: JSON.stringify({
+            ...meetingData,
+            userId: 'demo_user', // In production, get from auth
+            attendees: meetingData.attendees.split(',').map((email: string) => email.trim()).filter(Boolean)
+          }),
+        });
+      },
+      onSuccess: () => {
+        toast({
+          title: "Meeting Created",
+          description: "Your Google Meet meeting has been created successfully",
+        });
+        setShowCreateForm(false);
+        setNewMeeting({ title: '', description: '', startTime: '', endTime: '', attendees: '' });
+        queryClient.invalidateQueries({ queryKey: ['/api/integrations/googlemeet/meetings'] });
+      },
+      onError: (error) => {
+        toast({
+          title: "Failed to create meeting",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    });
+
+    if (!authStatus?.authenticated) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto">
+              <Video className="h-8 w-8 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Connect to Google Meet
+              </h3>
+              <p className="text-gray-500 dark:text-slate-400 mb-4">
+                Authenticate with Google to access your meetings and create new ones.
+              </p>
+              <Button
+                onClick={() => authenticateMutation.mutate()}
+                disabled={authenticateMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {authenticateMutation.isPending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Video className="h-4 w-4 mr-2" />
+                    Connect Google Meet
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="h-full p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Video className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Google Meet Integration</h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400">Manage your meetings and collaborations</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Meeting
+          </Button>
+        </div>
+
+        {/* Create Meeting Form */}
+        {showCreateForm && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New Meeting</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Title</label>
+                  <input
+                    type="text"
+                    value={newMeeting.title}
+                    onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800"
+                    placeholder="Meeting title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Attendees (emails)</label>
+                  <input
+                    type="text"
+                    value={newMeeting.attendees}
+                    onChange={(e) => setNewMeeting({ ...newMeeting, attendees: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800"
+                    placeholder="email1@example.com, email2@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Start Time</label>
+                  <input
+                    type="datetime-local"
+                    value={newMeeting.startTime}
+                    onChange={(e) => setNewMeeting({ ...newMeeting, startTime: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">End Time</label>
+                  <input
+                    type="datetime-local"
+                    value={newMeeting.endTime}
+                    onChange={(e) => setNewMeeting({ ...newMeeting, endTime: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Description</label>
+                <textarea
+                  value={newMeeting.description}
+                  onChange={(e) => setNewMeeting({ ...newMeeting, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800"
+                  rows={3}
+                  placeholder="Meeting description (optional)"
+                />
+              </div>
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => createMeetingMutation.mutate(newMeeting)}
+                  disabled={createMeetingMutation.isPending || !newMeeting.title || !newMeeting.startTime || !newMeeting.endTime}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {createMeetingMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Meeting'
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateForm(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Meetings List */}
+        <Card className="flex-1">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4" />
+              <span>Recent & Upcoming Meetings</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {meetingsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : meetings.length === 0 ? (
+              <div className="text-center py-8">
+                <Video className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-slate-400">No meetings found</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500">Create your first meeting to get started</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {meetings.map((meeting: any) => (
+                  <div
+                    key={meeting.id}
+                    className="flex items-center justify-between p-3 border border-gray-200 dark:border-slate-600 rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                        <Video className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{meeting.title}</h4>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-slate-400">
+                          <span className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {new Date(meeting.startTime).toLocaleDateString()} at {new Date(meeting.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className="flex items-center">
+                            <Users className="h-3 w-3 mr-1" />
+                            {meeting.attendees} attendees
+                          </span>
+                          <Badge variant={meeting.status === 'upcoming' ? 'default' : 'secondary'}>
+                            {meeting.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {meeting.meetLink && (
+                        <Button
+                          size="sm"
+                          onClick={() => window.open(meeting.meetLink, '_blank')}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Join
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getSystemInfo = (systemType: string) => {
     const configs = {
@@ -363,6 +626,8 @@ export default function SystemWorkspace() {
                     <p className="text-gray-500 dark:text-slate-400">Loading workspace...</p>
                   </div>
                 </div>
+              ) : system === 'googlemeet' && workspaceConfig?.customInterface ? (
+                <GoogleMeetInterface systemInfo={systemInfo} />
               ) : workspaceConfig?.embedUrl ? (
                 <iframe
                   src={workspaceConfig.embedUrl}

@@ -567,12 +567,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         },
         googlemeet: {
-          embedUrl: 'https://meet.google.com',
+          embedUrl: null, // Don't embed external Google Meet - use custom interface
           features: ['meetings', 'calendar', 'recordings'],
           apiEndpoints: {
             meetings: '/api/integrations/googlemeet/meetings',
             calendar: '/api/integrations/googlemeet/calendar'
-          }
+          },
+          customInterface: true // Flag to show custom interface instead of iframe
         },
         zendesk: {
           embedUrl: `https://${process.env.ZENDESK_SUBDOMAIN || 'demo'}.zendesk.com`,
