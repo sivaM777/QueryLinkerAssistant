@@ -235,9 +235,9 @@ export default function IncidentManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Avg. Resolution</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {isLoading ? <Skeleton className="h-8 w-16" /> : "4.2h"}
-                </p>
+                </div>
               </div>
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
                 <BarChart3 className="h-6 w-6 text-blue-600" />
