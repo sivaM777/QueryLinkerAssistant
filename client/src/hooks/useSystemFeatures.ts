@@ -24,7 +24,7 @@ const SYSTEM_FEATURES: SystemFeature[] = [
     id: "confluence-templates",
     name: "Page Templates",
     description: "Manage Confluence page templates and standards",
-    icon: "����",
+    icon: "📚",
     path: "/confluence/templates", 
     dependencies: ["confluence"],
   },
@@ -114,7 +114,12 @@ export function useSystemFeatures() {
     if (feature.dependencies.length === 0) {
       return connectedSystemTypes.length > 0; // Any system connected
     }
-    
+
+    // Special case for advanced analytics - show if any system is connected
+    if (feature.id === 'advanced-analytics') {
+      return connectedSystemTypes.length > 0;
+    }
+
     return feature.dependencies.some(dep => connectedSystemTypes.includes(dep));
   });
 
