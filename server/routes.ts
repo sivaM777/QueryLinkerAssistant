@@ -686,22 +686,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google Meet Management Routes
   app.post('/api/googlemeet/meetings', async (req, res) => {
     try {
+      // Convert datetime strings to Date objects before validation
+      const rawData = req.body;
+      const processedData = {
+        ...rawData,
+        startTime: new Date(rawData.startTime),
+        endTime: new Date(rawData.endTime)
+      };
+
       const meetingData = insertGoogleMeetingSchema.omit({ 
         calendarEventId: true, 
         meetingId: true, 
         meetLink: true,
         status: true,
         metadata: true
-      }).parse(req.body);
+      }).parse(processedData);
       
       // For demo purposes, use a mock userId. In production, get from authenticated session
-      const userId = req.body.userId || `user_${Date.now()}`;
+      const userId = rawData.userId || `user_${Date.now()}`;
 
       const meeting = await googleMeetService.createMeeting(userId, {
         title: meetingData.title,
         description: meetingData.description || undefined,
-        startTime: new Date(meetingData.startTime),
-        endTime: new Date(meetingData.endTime),
+        startTime: meetingData.startTime,
+        endTime: meetingData.endTime,
         attendees: meetingData.attendees as string[] || [],
         incidentId: meetingData.incidentId || undefined,
         systemId: meetingData.systemId || undefined
