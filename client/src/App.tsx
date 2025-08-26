@@ -41,7 +41,7 @@ function Router() {
     <SidebarProvider>
       <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
         <Sidebar />
-        <main className="flex-1 w-full transition-all duration-300 overflow-x-hidden" style={{
+        <main className="flex-1 w-full transition-all duration-300 ease-in-out overflow-x-hidden" style={{
           marginLeft: 'var(--sidebar-width, 16rem)'
         }}>
           <Header onSearchOpen={() => setIsSearchOpen(true)} />
