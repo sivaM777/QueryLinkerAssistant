@@ -16,6 +16,7 @@ import Landing from "@/pages/Landing";
 import SystemWorkspace from "@/pages/SystemWorkspace";
 import IncidentManagement from "@/pages/IncidentManagement";
 import AdvancedAnalytics from "@/pages/AdvancedAnalytics";
+import SlackCommands from "@/pages/SlackCommands";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
 import { useState } from "react";
