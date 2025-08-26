@@ -24,7 +24,7 @@ const SYSTEM_FEATURES: SystemFeature[] = [
     id: "confluence-templates",
     name: "Page Templates",
     description: "Manage Confluence page templates and standards",
-    icon: "📚",
+    icon: "����",
     path: "/confluence/templates", 
     dependencies: ["confluence"],
   },
@@ -136,11 +136,11 @@ export function useSystemFeatures() {
   };
 
   const getAdvancedFeatures = () => {
-    return SYSTEM_FEATURES.filter(feature => 
+    return SYSTEM_FEATURES.filter(feature =>
       feature.id.includes('advanced') || feature.id.includes('cross-platform')
     ).filter(feature => {
       if (feature.id === 'advanced-analytics') {
-        return connectedSystemTypes.length >= 2; // Requires multiple systems
+        return connectedSystemTypes.length >= 1; // Show with at least 1 system
       }
       return connectedSystemTypes.length > 0;
     });
