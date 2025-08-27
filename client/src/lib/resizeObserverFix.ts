@@ -12,15 +12,18 @@ export function suppressResizeObserverError() {
 
   // Override ResizeObserver to catch and ignore the specific error
   const originalResizeObserver = window.ResizeObserver;
+  const isROMessage = (msg?: string) => !!msg && (
+    msg.includes('ResizeObserver loop completed with undelivered notifications') ||
+    msg.includes('ResizeObserver loop limit exceeded')
+  );
   window.ResizeObserver = class extends originalResizeObserver {
     constructor(callback: ResizeObserverCallback) {
       const wrappedCallback: ResizeObserverCallback = (entries, observer) => {
         try {
-          callback(entries, observer);
+          // Defer callback to next frame to avoid feedback loops
+          requestAnimationFrame(() => callback(entries, observer));
         } catch (e) {
-          // Suppress the specific ResizeObserver error
-          if (e instanceof Error && e.message.includes('ResizeObserver loop completed with undelivered notifications')) {
-            console.warn('ResizeObserver error suppressed:', e.message);
+          if (e instanceof Error && isROMessage(e.message)) {
             return;
           }
           throw e;
@@ -34,18 +37,33 @@ export function suppressResizeObserverError() {
   const originalConsoleError = console.error;
   console.error = (...args: any[]) => {
     const message = args[0];
-    if (typeof message === 'string' && message.includes('ResizeObserver loop completed with undelivered notifications')) {
-      console.warn('ResizeObserver error suppressed:', message);
+    if (typeof message === 'string' && isROMessage(message)) {
       return;
     }
     originalConsoleError.apply(console, args);
   };
 
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    const message = args[0];
+    if (typeof message === 'string' && isROMessage(message)) {
+      return;
+    }
+    originalConsoleWarn.apply(console, args);
+  };
+
   // Listen for unhandled errors
   window.addEventListener('error', (event) => {
-    if (event.message && event.message.includes('ResizeObserver loop completed with undelivered notifications')) {
+    if (isROMessage(event.message)) {
       event.preventDefault();
-      console.warn('ResizeObserver error suppressed:', event.message);
+    }
+  });
+
+  // Some libraries surface this via unhandledrejection
+  window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    const msg = (event.reason && (event.reason.message || String(event.reason))) as string;
+    if (isROMessage(msg)) {
+      event.preventDefault();
     }
   });
 }
