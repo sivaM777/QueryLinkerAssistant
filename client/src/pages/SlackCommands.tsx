@@ -376,51 +376,11 @@ export default function SlackCommands() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Code className="h-5 w-5" />
-                {isCreating ? "Create Command" : "Command Details"}
+                Command Details
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isCreating ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Command Name</label>
-                    <Input placeholder="/mycommand" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Description</label>
-                    <Input placeholder="What does this command do?" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Usage</label>
-                    <Input placeholder="/mycommand [parameters]" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Response Type</label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select response type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ephemeral">Ephemeral (private)</SelectItem>
-                        <SelectItem value="in_channel">In Channel (public)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Response Template</label>
-                    <Textarea placeholder="Command response template..." rows={4} />
-                  </div>
-                  <div className="flex gap-3">
-                    <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
-                      <Send className="h-4 w-4 mr-2" />
-                      Create
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsCreating(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </>
-              ) : selectedCommand ? (
+              {selectedCommand ? (
                 <>
                   <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                     <h4 className="font-medium mb-2">Quick Test</h4>
