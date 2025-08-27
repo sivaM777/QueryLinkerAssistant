@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import MetricsCards from "@/components/Dashboard/MetricsCards";
-import SystemIntegrationsGrid from "@/components/Dashboard/SystemIntegrationsGrid";
 import RecentSearches from "@/components/Dashboard/RecentSearches";
 import SLAStatus from "@/components/Dashboard/SLAStatus";
 import QuickActions from "@/components/Dashboard/QuickActions";
@@ -69,7 +68,6 @@ export default function Dashboard() {
 
         <ActiveIncidents />
 
-        <SystemIntegrationsGrid />
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <RecentSearches onSearchOpen={(query) => {
