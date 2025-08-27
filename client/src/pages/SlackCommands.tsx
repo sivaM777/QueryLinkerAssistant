@@ -115,6 +115,25 @@ export default function SlackCommands() {
     },
   });
 
+  const createCommandMutation = useMutation({
+    mutationFn: async () => {
+      await new Promise((r) => setTimeout(r, 600));
+      return true;
+    },
+    onSuccess: () => {
+      toast({ title: "Command Created", description: `${newName} has been created.` });
+      setIsCreating(false);
+      setNewName("/mycommand");
+      setNewDesc("");
+      setNewUsage("/mycommand [parameters]");
+      setNewRespType("ephemeral");
+      setNewTemplate("");
+    },
+    onError: () => {
+      toast({ title: "Create Failed", description: "Unable to create command", variant: "destructive" });
+    },
+  });
+
   return (
     <div className="min-h-screen space-y-6 animate-fadeIn p-4 lg:p-6">
       {/* Header */}
@@ -144,6 +163,51 @@ export default function SlackCommands() {
           </div>
         </div>
       </div>
+
+      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create Slack Command</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Command Name</label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Description</label>
+              <Input value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Usage</label>
+              <Input value={newUsage} onChange={(e) => setNewUsage(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Response Type</label>
+              <Select value={newRespType} onValueChange={(v) => setNewRespType(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select response type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ephemeral">Ephemeral (private)</SelectItem>
+                  <SelectItem value="in_channel">In Channel (public)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Response Template</label>
+              <Textarea rows={4} value={newTemplate} onChange={(e) => setNewTemplate(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
+            <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => createCommandMutation.mutate()} disabled={createCommandMutation.isPending}>
+              <Send className="h-4 w-4 mr-2" />
+              {createCommandMutation.isPending ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
