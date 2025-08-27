@@ -60,6 +60,7 @@ function Router() {
               <Route path="/analytics" component={Analytics} />
               <Route path="/analytics/advanced" component={AdvancedAnalytics} />
               <Route path="/servicenow/incidents" component={IncidentManagement} />
+              <Route path="/incidents" component={IncidentManagement} />
               <Route path="/slack/commands" component={SlackCommands} />
               <Route path="/notion/workspace" component={NotionWorkspace} />
               <Route path="/integrations" component={SystemIntegrations} />
