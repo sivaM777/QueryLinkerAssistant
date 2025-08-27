@@ -25,6 +25,14 @@ import SearchModal from "@/components/SearchModal";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
+function Redirect({ to }: { to: string }) {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    setLocation(to);
+  }, [setLocation, to]);
+  return null;
+}
+
 function Router() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [location] = useLocation();
@@ -48,6 +56,7 @@ function Router() {
           <div className="w-full max-w-none">
             <Switch>
               <Route path="/" component={Dashboard} />
+              <Route path="/login" component={() => <Redirect to="/" />} />
               <Route path="/analytics" component={Analytics} />
               <Route path="/analytics/advanced" component={AdvancedAnalytics} />
               <Route path="/servicenow/incidents" component={IncidentManagement} />
