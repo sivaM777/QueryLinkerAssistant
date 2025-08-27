@@ -11,7 +11,6 @@ import RecentActivity from "@/components/Dashboard/RecentActivity";
 import ActiveIncidents from "@/components/Dashboard/ActiveIncidents";
 import SearchModal from "@/components/SearchModal";
 import SystemFeaturesPanel from "@/components/SystemFeatures/SystemFeaturesPanel";
-import AutoSystemPanels from "@/components/SystemPanels";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -79,7 +78,6 @@ export default function Dashboard() {
 
         <QuickActions />
 
-        <AutoSystemPanels />
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <RecentActivity />
