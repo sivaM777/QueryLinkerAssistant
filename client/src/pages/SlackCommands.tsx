@@ -25,6 +25,7 @@ import {
   Hash,
   Send
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 
 interface SlashCommand {
