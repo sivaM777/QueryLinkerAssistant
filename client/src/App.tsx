@@ -20,7 +20,7 @@ import SlackCommands from "@/pages/SlackCommands";
 import NotionWorkspace from "@/pages/NotionWorkspace";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SearchModal from "@/components/SearchModal";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import { SidebarProvider } from "@/components/ui/sidebar";
