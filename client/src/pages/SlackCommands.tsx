@@ -44,6 +44,11 @@ export default function SlackCommands() {
   const queryClient = useQueryClient();
   const [selectedCommand, setSelectedCommand] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [newName, setNewName] = useState("/mycommand");
+  const [newDesc, setNewDesc] = useState("");
+  const [newUsage, setNewUsage] = useState("/mycommand [parameters]");
+  const [newRespType, setNewRespType] = useState<"ephemeral" | "in_channel">("ephemeral");
+  const [newTemplate, setNewTemplate] = useState("");
 
   // Mock data for demonstration
   const commands: SlashCommand[] = [
