@@ -353,10 +353,6 @@ export default function Sidebar() {
     );
   }
 
-  // Update CSS variable for main content margin
-  React.useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '5rem' : '16rem');
-  }, [isCollapsed]);
 
   return (
     <aside
