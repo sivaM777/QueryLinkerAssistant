@@ -53,8 +53,9 @@ export default function IncidentManagement() {
   const [activeTab, setActiveTab] = useState("active");
 
   // Fetch incidents based on filters
+  const incidentsUrl = `/api/incidents?status=${encodeURIComponent(statusFilter)}&severity=${encodeURIComponent(severityFilter)}&search=${encodeURIComponent(searchQuery)}`;
   const { data: incidents = [], isLoading, error } = useQuery({
-    queryKey: ["/api/incidents", { status: statusFilter, severity: severityFilter, search: searchQuery }],
+    queryKey: [incidentsUrl],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
