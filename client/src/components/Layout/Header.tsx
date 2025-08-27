@@ -48,14 +48,7 @@ export default function Header({ onSearchOpen }: HeaderProps = {}) {
       <div className="px-4 lg:px-6 py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center space-x-4 min-w-0 flex-1 lg:flex-initial">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center">
-                <LinkIcon className="text-white" />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">QueryLinker</h1>
-                <p className="text-xs text-gray-500 dark:text-slate-400">AI-Powered ITSM</p>
-              </div>
+            <div className="flex items-center">
               <SidebarTrigger className="flex-shrink-0 h-10 w-10 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-all duration-200" />
             </div>
             <div className="min-w-0">
