@@ -340,8 +340,8 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
 export default function Sidebar() {
   const { isMobile, openMobile, setOpenMobile, state, open } = useSidebar();
 
-  // Determine if collapsed based on context state
-  const isCollapsed = state === "collapsed";
+  // Determine if collapsed based on context state  
+  const isCollapsed = state === "collapsed" || !open;
 
   if (isMobile) {
     return (
