@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link as LinkIcon, Search, BarChart3, Shield, Zap, Users } from "lucide-react";
-import DarkVeil from "@/components/DarkVeil";
+import Silk from "@/components/Silk";
 import TextType from "@/components/TextType";
 import "@/components/TextType.css";
 
@@ -11,7 +11,13 @@ export default function Landing() {
   };
 
   return (
-    <DarkVeil className="min-h-screen">
+    <Silk 
+      className="min-h-screen"
+      speed={0.8}
+      scale={1.5}
+      color="#8b5cf6"
+      noiseIntensity={1.2}
+    >
       {/* Header */}
       <header className="container mx-auto px-6 py-8">
         <nav className="flex items-center justify-between">
@@ -198,6 +204,6 @@ export default function Landing() {
           </div>
         </footer>
       </main>
-    </DarkVeil>
+    </Silk>
   );
 }
