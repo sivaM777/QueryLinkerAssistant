@@ -1,0 +1,30 @@
+.text-type {
+  display: inline-block;
+}
+
+.text-type__content {
+  display: inline-block;
+}
+
+.text-type__cursor {
+  display: inline-block;
+  font-weight: normal;
+}
+
+.text-type__cursor--hidden {
+  opacity: 0;
+}
+
+/* Custom cursor styles */
+.text-type__cursor {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
