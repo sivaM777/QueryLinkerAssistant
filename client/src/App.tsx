@@ -13,6 +13,7 @@ import KnowledgeBase from "@/pages/KnowledgeBase";
 import Settings from "@/pages/Settings";
 import Activity from "@/pages/Activity";
 import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
 import SystemWorkspace from "@/pages/SystemWorkspace";
 import IncidentManagement from "@/pages/IncidentManagement";
 import AdvancedAnalytics from "@/pages/AdvancedAnalytics";
@@ -38,11 +39,16 @@ function Router() {
   const [location] = useLocation();
 
   // Check if current route should show the dashboard layout
-  const isDashboardRoute = location !== "/landing";
+  const isDashboardRoute = location !== "/landing" && location !== "/login";
 
   if (!isDashboardRoute) {
-    // Render landing page without dashboard layout
-    return <Landing />;
+    // Render landing or login page without dashboard layout
+    return (
+      <Switch>
+        <Route path="/landing" component={Landing} />
+        <Route path="/login" component={Login} />
+      </Switch>
+    );
   }
 
   return (
@@ -54,7 +60,6 @@ function Router() {
           <div className="w-full max-w-none">
             <Switch>
               <Route path="/" component={Dashboard} />
-              <Route path="/login" component={() => <Redirect to="/" />} />
               <Route path="/analytics" component={Analytics} />
               <Route path="/analytics/advanced" component={AdvancedAnalytics} />
               <Route path="/servicenow/incidents" component={IncidentManagement} />

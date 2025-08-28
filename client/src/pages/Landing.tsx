@@ -10,6 +10,10 @@ export default function Landing() {
     window.location.href = "/login";
   };
 
+  const handleGetStarted = () => {
+    window.location.href = "/login";
+  };
+
   return (
     <Silk 
       className="min-h-screen"
@@ -69,7 +73,7 @@ export default function Landing() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
-                onClick={handleLogin}
+                onClick={handleGetStarted}
                 size="lg"
                 className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-medium px-8 py-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
                 data-testid="get-started-button"
