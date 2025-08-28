@@ -102,13 +102,30 @@ export default function DarkVeil({
     if (!canvas) return;
     
     const parent = canvas.parentElement as HTMLElement;
+    
+    // Ensure canvas is visible
+    canvas.style.display = 'block';
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
 
     const renderer = new Renderer({
       dpr: Math.min(window.devicePixelRatio, 2),
       canvas,
+      alpha: true,
+      antialias: false,
     });
 
     const gl = renderer.gl;
+    
+    // Check if WebGL is supported
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
+    
     const geometry = new Triangle(gl);
 
     const program = new Program(gl, {
@@ -128,8 +145,10 @@ export default function DarkVeil({
     const mesh = new Mesh(gl, { geometry, program });
 
     const resize = () => {
-      const w = parent.clientWidth,
-        h = parent.clientHeight;
+      const w = parent.clientWidth || window.innerWidth,
+        h = parent.clientHeight || window.innerHeight;
+      canvas.width = w * resolutionScale;
+      canvas.height = h * resolutionScale;
       renderer.setSize(w * resolutionScale, h * resolutionScale);
       program.uniforms.uResolution.value.set(w, h);
     };
