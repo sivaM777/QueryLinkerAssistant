@@ -1,17 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link as LinkIcon, Search, BarChart3, Shield, Zap, Users } from "lucide-react";
+import { useLocation } from "wouter";
 import Silk from "@/components/Silk";
 import TextType from "@/components/TextType";
 import "@/components/TextType.css";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
+  
   const handleLogin = () => {
-    window.location.href = "/login";
+    setLocation("/login");
   };
 
   const handleGetStarted = () => {
-    window.location.href = "/login";
+    setLocation("/login");
   };
 
   return (

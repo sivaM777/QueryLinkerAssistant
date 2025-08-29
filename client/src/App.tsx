@@ -41,15 +41,15 @@ function Router() {
   const [location, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
 
-  // Redirect to login if not authenticated and not on login page
+  // Redirect to landing if not authenticated and trying to access protected routes
   useEffect(() => {
-    if (!isAuthenticated && location !== "/login" && location !== "/landing") {
-      setLocation("/login");
+    if (!isAuthenticated && location !== "/login" && location !== "/landing" && location !== "/") {
+      setLocation("/landing");
     }
   }, [isAuthenticated, location, setLocation]);
 
   // Check if current route should show the dashboard layout
-  const isDashboardRoute = location !== "/landing" && location !== "/login";
+  const isDashboardRoute = location !== "/landing" && location !== "/login" && isAuthenticated;
 
   if (!isDashboardRoute) {
     // Render landing or login page without dashboard layout
@@ -69,7 +69,7 @@ function Router() {
           <Header onSearchOpen={() => setIsSearchOpen(true)} />
           <div className="w-full max-w-none">
             <Switch>
-              <Route path="/" component={() => isAuthenticated ? <Dashboard /> : <Redirect to="/login" />} />
+              <Route path="/" component={() => isAuthenticated ? <Dashboard /> : <Redirect to="/landing" />} />
               <Route path="/analytics" component={Analytics} />
               <Route path="/analytics/advanced" component={AdvancedAnalytics} />
               <Route path="/servicenow/incidents" component={IncidentManagement} />
