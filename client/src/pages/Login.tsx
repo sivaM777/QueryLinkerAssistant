@@ -3,20 +3,100 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Link as LinkIcon, Eye, EyeOff } from "lucide-react";
+import { Link as LinkIcon, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { FaGoogle, FaFacebook, FaTwitter } from "react-icons/fa";
 import { useState } from "react";
+import { useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
+  const [isSignup, setIsSignup] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Login mutation
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      return apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: credentials,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Login Successful",
+        description: "Welcome back to QueryLinker!",
+      });
+      setLocation('/');
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || "Invalid email or incorrect password",
+      });
+    },
+  });
+
+  // Register mutation
+  const registerMutation = useMutation({
+    mutationFn: async (userData: { email: string; password: string; firstName: string; lastName: string }) => {
+      return apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: userData,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Registration Successful",
+        description: "Account created! Please login with your credentials.",
+      });
+      setIsSignup(false);
+      // Clear signup fields
+      setFirstName("");
+      setLastName("");
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message || "Failed to create account",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempt:", { email, password, rememberMe });
+    
+    if (isSignup) {
+      if (!firstName || !lastName || !email || !password) {
+        toast({
+          variant: "destructive",
+          title: "Missing Information",
+          description: "Please fill in all required fields",
+        });
+        return;
+      }
+      registerMutation.mutate({ email, password, firstName, lastName });
+    } else {
+      if (!email || !password) {
+        toast({
+          variant: "destructive",
+          title: "Missing Information",
+          description: "Please enter your email and password",
+        });
+        return;
+      }
+      loginMutation.mutate({ email, password });
+    }
   };
 
   const handleSocialLogin = (provider: string) => {
@@ -104,20 +184,67 @@ export default function Login() {
             <div className="w-full max-w-sm">
               {/* Header */}
               <div className="text-center mb-8">
+                {isSignup && (
+                  <button
+                    onClick={() => setIsSignup(false)}
+                    className="flex items-center mb-4 text-gray-600 hover:text-gray-800 transition-colors"
+                    data-testid="button-back-to-login"
+                  >
+                    <ArrowLeft size={16} className="mr-2" />
+                    Back to Login
+                  </button>
+                )}
                 <div className="flex items-center justify-center mb-4">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-3">
                     <LinkIcon className="text-white text-lg" />
                   </div>
                   <span className="text-2xl font-bold text-gray-800">QueryLinker</span>
                 </div>
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back :)</h1>
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                  {isSignup ? "Create Account" : "Welcome Back :)"}
+                </h1>
                 <p className="text-gray-600 text-sm">
-                  To keep connected with us please login with your personal information by email address and password 🔐
+                  {isSignup 
+                    ? "Join QueryLinker to streamline your IT operations with intelligent automation 🚀"
+                    : "To keep connected with us please login with your personal information by email address and password 🔐"
+                  }
                 </p>
               </div>
 
-              {/* Login form */}
-              <form onSubmit={handleLogin} className="space-y-4">
+              {/* Authentication form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {isSignup && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName" className="text-sm text-gray-700">First Name</Label>
+                        <Input
+                          id="firstName"
+                          type="text"
+                          placeholder="John"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          data-testid="input-firstName"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName" className="text-sm text-gray-700">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          type="text"
+                          placeholder="Doe"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          data-testid="input-lastName"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm text-gray-700">Email Address</Label>
                   <Input
@@ -181,10 +308,14 @@ export default function Login() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition-colors"
-                  data-testid="button-login"
+                  disabled={loginMutation.isPending || registerMutation.isPending}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition-colors disabled:opacity-50"
+                  data-testid={isSignup ? "button-register" : "button-login"}
                 >
-                  Login Now
+                  {loginMutation.isPending || registerMutation.isPending 
+                    ? "Please wait..." 
+                    : (isSignup ? "Create Account" : "Login Now")
+                  }
                 </Button>
               </form>
 
@@ -220,10 +351,15 @@ export default function Login() {
 
                 <div className="text-center mt-6">
                   <span className="text-sm text-gray-600">
-                    Don't have an account? {" "}
-                    <a href="#" className="text-blue-600 hover:text-blue-800 font-semibold">
-                      Create Account
-                    </a>
+                    {isSignup ? "Already have an account? " : "Don't have an account? "}
+                    <button
+                      type="button"
+                      onClick={() => setIsSignup(!isSignup)}
+                      className="text-blue-600 hover:text-blue-800 font-semibold"
+                      data-testid="button-toggle-signup"
+                    >
+                      {isSignup ? "Login" : "Create Account"}
+                    </button>
                   </span>
                 </div>
               </div>

@@ -15,9 +15,90 @@ import {
 import { syncService } from './connectors';
 import { syncScheduler } from './scheduler';
 import { googleMeetService } from './googleMeetService';
-import { insertGoogleMeetingSchema } from '@shared/schema';
+import { insertGoogleMeetingSchema, insertUserSchema } from '@shared/schema';
+import bcrypt from 'bcryptjs';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // Authentication routes
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Create user
+      const userData = {
+        email,
+        password: hashedPassword,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        role: 'user',
+        emailVerified: false,
+        authProvider: 'email'
+      };
+      
+      const user = await storage.createEmailUser(userData);
+      
+      // Don't return password in response
+      const { password: _, ...userResponse } = user;
+      
+      res.status(201).json({ 
+        message: "User registered successfully", 
+        user: userResponse 
+      });
+    } catch (error) {
+      console.error("Error registering user:", error);
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      // Get user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or incorrect password" });
+      }
+
+      // Check password
+      const isValidPassword = await bcrypt.compare(password, user.password || '');
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid email or incorrect password" });
+      }
+
+      // Update last login
+      await storage.updateUserLastLogin(user.id);
+      
+      // Don't return password in response
+      const { password: _, ...userResponse } = user;
+      
+      res.json({ 
+        message: "Login successful", 
+        user: userResponse 
+      });
+    } catch (error) {
+      console.error("Error logging in user:", error);
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
 
 
   // Dashboard metrics
