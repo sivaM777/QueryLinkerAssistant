@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Analytics from "@/pages/Analytics";
@@ -25,6 +26,7 @@ import { useState, useEffect } from "react";
 import SearchModal from "@/components/SearchModal";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 function Redirect({ to }: { to: string }) {
   const [, setLocation] = useLocation();
@@ -36,7 +38,15 @@ function Redirect({ to }: { to: string }) {
 
 function Router() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
+
+  // Redirect to login if not authenticated and not on login page
+  useEffect(() => {
+    if (!isAuthenticated && location !== "/login" && location !== "/landing") {
+      setLocation("/login");
+    }
+  }, [isAuthenticated, location, setLocation]);
 
   // Check if current route should show the dashboard layout
   const isDashboardRoute = location !== "/landing" && location !== "/login";
@@ -59,7 +69,7 @@ function Router() {
           <Header onSearchOpen={() => setIsSearchOpen(true)} />
           <div className="w-full max-w-none">
             <Switch>
-              <Route path="/" component={Dashboard} />
+              <Route path="/" component={() => isAuthenticated ? <Dashboard /> : <Redirect to="/login" />} />
               <Route path="/analytics" component={Analytics} />
               <Route path="/analytics/advanced" component={AdvancedAnalytics} />
               <Route path="/servicenow/incidents" component={IncidentManagement} />
@@ -86,12 +96,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

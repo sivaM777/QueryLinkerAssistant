@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useState, useEffect } from "react";
 import * as React from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   Search,
@@ -38,6 +39,21 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
   const { availableFeatures, connectedSystemTypes } = useSystemFeatures();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { setOpenMobile, isMobile } = useSidebar();
+  const { user } = useAuth();
+  
+  // Generate user initials
+  const getUserInitials = () => {
+    if (!user) return 'QL';
+    const firstInitial = user.firstName?.charAt(0)?.toUpperCase() || '';
+    const lastInitial = user.lastName?.charAt(0)?.toUpperCase() || '';
+    return firstInitial + lastInitial || user.email?.charAt(0)?.toUpperCase() || 'U';
+  };
+  
+  const getUserFullName = () => {
+    if (!user) return 'QueryLinker User';
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    return fullName || user.email || 'User';
+  };
 
   // Build navigation with system features
   const navigation = [...baseNavigation];
@@ -58,11 +74,11 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
     navigation.splice(-1, 0, ...systemFeatures); // Insert before Settings
   }
 
+  const { logout } = useAuth();
+  
   const handleLogout = () => {
-    // Clear any stored data and redirect to login
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = '/landing';
+    logout();
+    window.location.href = '/login';
   };
 
   // Modern collapsed view
@@ -307,15 +323,15 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
               <AvatarFallback className="bg-primary text-primary-foreground">
-                QL
+                {getUserInitials()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                QueryLinker User
+                {getUserFullName()}
               </p>
               <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
-                User
+                {user?.role || 'User'}
               </p>
             </div>
             <Button

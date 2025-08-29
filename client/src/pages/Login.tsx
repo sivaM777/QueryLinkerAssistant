@@ -10,6 +10,7 @@ import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Login() {
   const [isSignup, setIsSignup] = useState(false);
@@ -21,16 +22,22 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { setUser } = useAuth();
 
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      return apiRequest('/api/auth/login', {
+      const response = await apiRequest('/api/auth/login', {
         method: 'POST',
         body: credentials,
       });
+      return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Store user data from login response
+      if (data && data.user) {
+        setUser(data.user);
+      }
       toast({
         title: "Login Successful",
         description: "Welcome back to QueryLinker!",
@@ -49,10 +56,11 @@ export default function Login() {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async (userData: { email: string; password: string; firstName: string; lastName: string }) => {
-      return apiRequest('/api/auth/register', {
+      const response = await apiRequest('/api/auth/register', {
         method: 'POST',
         body: userData,
       });
+      return await response.json();
     },
     onSuccess: () => {
       toast({
