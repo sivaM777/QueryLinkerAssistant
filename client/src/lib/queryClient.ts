@@ -2,8 +2,27 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const contentType = res.headers.get('content-type') || '';
+    let errorMessage = res.statusText;
+    
+    try {
+      if (contentType.includes('application/json')) {
+        const json = await res.json();
+        errorMessage = json.message || json.error || res.statusText;
+      } else {
+        const text = await res.text();
+        // If it's HTML, extract just the error part, not the full HTML
+        if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+          errorMessage = 'Server error occurred';
+        } else {
+          errorMessage = text.substring(0, 200); // Limit error message length
+        }
+      }
+    } catch (parseError) {
+      errorMessage = res.statusText || 'Unknown error occurred';
+    }
+    
+    throw new Error(`${res.status}: ${errorMessage}`);
   }
 }
 

@@ -31,6 +31,13 @@ export default function Login() {
         method: 'POST',
         body: credentials,
       });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error('Server returned non-JSON response: ' + text.substring(0, 100));
+      }
+      
       return await response.json();
     },
     onSuccess: (data) => {
@@ -60,6 +67,13 @@ export default function Login() {
         method: 'POST',
         body: userData,
       });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error('Server returned non-JSON response: ' + text.substring(0, 100));
+      }
+      
       return await response.json();
     },
     onSuccess: () => {
