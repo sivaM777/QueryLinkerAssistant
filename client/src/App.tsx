@@ -55,6 +55,7 @@ function Router() {
     // Render landing or login page without dashboard layout
     return (
       <Switch>
+        <Route path="/" component={Landing} />
         <Route path="/landing" component={Landing} />
         <Route path="/login" component={Login} />
       </Switch>
@@ -69,7 +70,7 @@ function Router() {
           <Header onSearchOpen={() => setIsSearchOpen(true)} />
           <div className="w-full max-w-none">
             <Switch>
-              <Route path="/" component={() => isAuthenticated ? <Dashboard /> : <Redirect to="/landing" />} />
+              <Route path="/" component={Dashboard} />
               <Route path="/analytics" component={Analytics} />
               <Route path="/analytics/advanced" component={AdvancedAnalytics} />
               <Route path="/servicenow/incidents" component={IncidentManagement} />

@@ -13,10 +13,10 @@
         "emailVerified": false,
         "passwordResetToken": null,
         "passwordResetExpires": null,
-        "lastLoginAt": "2025-08-24T11:14:02.124Z",
+        "lastLoginAt": "2025-08-29T05:24:25.559Z",
         "authProvider": "email",
         "createdAt": "2025-08-24T11:04:35.064Z",
-        "updatedAt": "2025-08-24T11:14:02.124Z"
+        "updatedAt": "2025-08-29T05:24:25.559Z"
       }
     ],
     [

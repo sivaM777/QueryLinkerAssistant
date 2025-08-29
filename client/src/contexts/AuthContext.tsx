@@ -50,6 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.clear();
     sessionStorage.clear();
+    // Redirect to landing page after logout
+    window.location.href = '/';
   };
 
   const value: AuthContextType = {
