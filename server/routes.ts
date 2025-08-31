@@ -666,7 +666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/${system}/callback`;
       
       const authUrls = {
-        slack: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=channels:read,chat:write,users:read,conversations:history,conversations:read&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`,
+        slack: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=chat:write,channels:read,users:read&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`,
         googlemeet: googleMeetService.getAuthUrl(),
         zendesk: `https://${process.env.ZENDESK_SUBDOMAIN}.zendesk.com/oauth/authorizations/new?response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&client_id=${process.env.ZENDESK_CLIENT_ID}&scope=read`,
         notion: `https://api.notion.com/v1/oauth/authorize?client_id=${process.env.NOTION_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}`,
