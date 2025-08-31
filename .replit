@@ -40,4 +40,3 @@ waitForPort = 5000
 
 [agent]
 expertMode = true
-integrations = ["javascript_slack==1.0.0"]
