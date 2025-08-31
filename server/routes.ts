@@ -819,12 +819,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return workspace configuration for embedded apps
       const workspaceConfigs = {
         slack: {
-          embedUrl: 'https://app.slack.com/client',
-          features: ['channels', 'direct-messages', 'search'],
+          embedUrl: null, // Don't embed external Slack - use custom interface
+          features: ['channels', 'direct-messages', 'search', 'real-time-messaging'],
           apiEndpoints: {
             channels: '/api/integrations/slack/channels',
-            messages: '/api/integrations/slack/messages'
-          }
+            messages: '/api/integrations/slack/messages',
+            status: '/api/integrations/slack/status',
+            workspace: '/api/integrations/slack/workspace'
+          },
+          customInterface: true // Flag to show custom interface instead of iframe
         },
         googlemeet: {
           embedUrl: null, // Don't embed external Google Meet - use custom interface

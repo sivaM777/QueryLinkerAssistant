@@ -23,6 +23,7 @@ import {
   Clock,
   Users
 } from "lucide-react";
+import SlackPanel from "@/components/SystemPanels/SlackPanel";
 
 interface WorkspaceConfig {
   embedUrl: string | null;
@@ -85,6 +86,15 @@ export default function SystemWorkspace() {
       });
     },
   });
+
+  // Slack Custom Interface Component
+  function SlackInterface({ systemInfo }: { systemInfo: any }) {
+    return (
+      <div className="h-full p-4">
+        <SlackPanel />
+      </div>
+    );
+  }
 
   // Google Meet Custom Interface Component
   function GoogleMeetInterface({ systemInfo }: { systemInfo: any }) {
@@ -626,6 +636,8 @@ export default function SystemWorkspace() {
                     <p className="text-gray-500 dark:text-slate-400">Loading workspace...</p>
                   </div>
                 </div>
+              ) : system === 'slack' && workspaceConfig?.customInterface ? (
+                <SlackInterface systemInfo={systemInfo} />
               ) : system === 'googlemeet' && workspaceConfig?.customInterface ? (
                 <GoogleMeetInterface systemInfo={systemInfo} />
               ) : workspaceConfig?.embedUrl ? (
