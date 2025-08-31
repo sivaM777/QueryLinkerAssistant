@@ -19,6 +19,7 @@ import SystemWorkspace from "@/pages/SystemWorkspace";
 import IncidentManagement from "@/pages/IncidentManagement";
 import AdvancedAnalytics from "@/pages/AdvancedAnalytics";
 import SlackCommands from "@/pages/SlackCommands";
+import SlackInterface from "@/pages/SlackInterface";
 import NotionWorkspace from "@/pages/NotionWorkspace";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
@@ -80,6 +81,7 @@ function Router() {
               <Route path="/servicenow/incidents" component={IncidentManagement} />
               <Route path="/incidents" component={IncidentManagement} />
               <Route path="/slack/commands" component={SlackCommands} />
+              <Route path="/slack/interface" component={SlackInterface} />
               <Route path="/notion/workspace" component={NotionWorkspace} />
               <Route path="/integrations" component={SystemIntegrations} />
               <Route path="/sla" component={SLAManagement} />

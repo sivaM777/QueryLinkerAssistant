@@ -288,7 +288,7 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
                 .slice(0, 4)
                 .map((systemType: string) => {
                   const systemConfigs = {
-                    slack: { name: "Slack", icon: "💬" },
+                    slack: { name: "Slack", icon: "💬", href: "/slack/interface" },
                     googlemeet: { name: "Google Meet", icon: "📹" },
                     zendesk: { name: "Zendesk", icon: "📋" },
                     notion: { name: "Notion", icon: "📝" },
@@ -297,7 +297,7 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
                   const config = systemConfigs[systemType as keyof typeof systemConfigs] || { name: systemType, icon: "🔧" };
 
                   return (
-                    <Link key={systemType} href={`/workspace/${systemType}`}>
+                    <Link key={systemType} href={config.href || `/workspace/${systemType}`}>
                       <Button
                         variant="ghost"
                         className="w-full justify-start group transition-all duration-200 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
