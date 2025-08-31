@@ -18,6 +18,7 @@ import { googleMeetService } from './googleMeetService';
 import { insertGoogleMeetingSchema, insertUserSchema } from '@shared/schema';
 import bcrypt from 'bcryptjs';
 import { emailService } from './emailService';
+import { slackService } from './slackService';
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -665,7 +666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/${system}/callback`;
       
       const authUrls = {
-        slack: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=channels:read,chat:write,users:read&redirect_uri=${encodeURIComponent(redirectUri)}`,
+        slack: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=channels:read,chat:write,users:read,conversations:history,conversations:read&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`,
         googlemeet: googleMeetService.getAuthUrl(),
         zendesk: `https://${process.env.ZENDESK_SUBDOMAIN}.zendesk.com/oauth/authorizations/new?response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&client_id=${process.env.ZENDESK_CLIENT_ID}&scope=read`,
         notion: `https://api.notion.com/v1/oauth/authorize?client_id=${process.env.NOTION_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}`,
@@ -676,6 +677,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!authUrl) {
         return res.status(400).json({ message: 'Unsupported system' });
       }
+
+      // For Slack, redirect directly to authorization URL
+      if (system === 'slack') {
+        return res.redirect(authUrl);
+      }
       
       res.json({ authUrl, redirectUri });
     } catch (error) {
@@ -684,15 +690,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Handle Slack OAuth callback (GET request from Slack)
+  app.get('/api/auth/slack/callback', async (req, res) => {
+    try {
+      const { code, error } = req.query;
+      
+      if (error) {
+        console.error('Slack OAuth error:', error);
+        return res.send(`
+          <html>
+            <body>
+              <h2>Connection Failed</h2>
+              <p>Failed to connect to Slack: ${error}</p>
+              <script>
+                setTimeout(() => window.close(), 3000);
+              </script>
+            </body>
+          </html>
+        `);
+      }
+
+      if (!code) {
+        return res.send(`
+          <html>
+            <body>
+              <h2>Connection Failed</h2>
+              <p>No authorization code received from Slack</p>
+              <script>
+                setTimeout(() => window.close(), 3000);
+              </script>
+            </body>
+          </html>
+        `);
+      }
+
+      // Exchange code for access token
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/slack/callback`;
+      const workspaceInfo = await slackService.exchangeCodeForToken(code as string, redirectUri);
+      
+      console.log('Slack workspace connected:', workspaceInfo.teamName);
+      
+      return res.send(`
+        <html>
+          <body>
+            <h2>Successfully Connected!</h2>
+            <p>Your Slack workspace "${workspaceInfo.teamName}" has been connected to QueryLinker.</p>
+            <p>You can now close this window and return to the application.</p>
+            <script>
+              setTimeout(() => window.close(), 3000);
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Error in Slack OAuth callback:', error);
+      return res.send(`
+        <html>
+          <body>
+            <h2>Connection Failed</h2>
+            <p>An error occurred while connecting to Slack. Please try again.</p>
+            <script>
+              setTimeout(() => window.close(), 3000);
+            </script>
+          </body>
+        </html>
+      `);
+    }
+  });
+
   app.post('/api/auth/:system/callback', async (req, res) => {
     try {
       const { system } = req.params;
       const { code, state } = req.body;
       
-      // Here you would exchange the code for access tokens
-      // For now, we'll simulate successful authentication
-      
-      // Store the authentication data (in a real app, you'd use a secure session store)
+      // For other systems, use mock data
       const authData = {
         system,
         accessToken: `mock_token_${system}_${Date.now()}`,
@@ -839,18 +910,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Integration API endpoints (mock data for embedded apps)
+  // Slack integration endpoints
   app.get('/api/integrations/slack/channels', async (req, res) => {
-    res.json([
-      { id: 'C123', name: 'general', purpose: 'Company-wide announcements' },
-      { id: 'C124', name: 'development', purpose: 'Development discussions' },
-      { id: 'C125', name: 'support', purpose: 'Customer support' }
-    ]);
+    try {
+      const channels = await slackService.getChannels();
+      res.json(channels);
+    } catch (error) {
+      console.error('Error fetching Slack channels:', error);
+      res.status(500).json({ error: 'Failed to fetch channels' });
+    }
+  });
+
+  app.get('/api/integrations/slack/messages/:channelId', async (req, res) => {
+    try {
+      const { channelId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const messages = await slackService.getChannelMessages(channelId, limit);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching Slack messages:', error);
+      res.status(500).json({ error: 'Failed to fetch messages' });
+    }
   });
 
   app.post('/api/integrations/slack/message', async (req, res) => {
-    const { channel, text } = req.body;
-    console.log(`Mock Slack message sent to ${channel}: ${text}`);
-    res.json({ success: true, timestamp: Date.now() });
+    try {
+      const { channel, text } = req.body;
+      const result = await slackService.sendMessage(channel, text);
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error('Error sending Slack message:', error);
+      res.status(500).json({ error: 'Failed to send message' });
+    }
+  });
+
+  app.get('/api/integrations/slack/direct-messages', async (req, res) => {
+    try {
+      const dms = await slackService.getDirectMessages();
+      res.json(dms);
+    } catch (error) {
+      console.error('Error fetching direct messages:', error);
+      res.status(500).json({ error: 'Failed to fetch direct messages' });
+    }
+  });
+
+  app.get('/api/integrations/slack/workspace', async (req, res) => {
+    try {
+      const workspaceInfo = await slackService.getWorkspaceInfo();
+      res.json(workspaceInfo);
+    } catch (error) {
+      console.error('Error fetching workspace info:', error);
+      res.status(500).json({ error: 'Failed to fetch workspace info' });
+    }
+  });
+
+  app.post('/api/integrations/slack/incident-notification', async (req, res) => {
+    try {
+      const { channelId, incident } = req.body;
+      const result = await slackService.sendIncidentNotification(channelId, incident);
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error('Error sending incident notification:', error);
+      res.status(500).json({ error: 'Failed to send notification' });
+    }
+  });
+
+  app.get('/api/integrations/slack/status', async (req, res) => {
+    try {
+      const isConnected = await slackService.testConnection();
+      const workspace = slackService.getWorkspace();
+      res.json({ 
+        connected: isConnected,
+        workspace: workspace ? {
+          teamName: workspace.teamName,
+          teamId: workspace.teamId
+        } : null
+      });
+    } catch (error) {
+      console.error('Error checking Slack status:', error);
+      res.json({ connected: false, workspace: null });
+    }
   });
 
   // Google Meet Authentication Routes
