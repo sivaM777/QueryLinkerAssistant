@@ -663,7 +663,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/:system/login', async (req, res) => {
     try {
       const { system } = req.params;
-      const redirectUri = `https://${req.get('host')}/api/auth/${system}/callback`;
+      const host = process.env.REPLIT_DOMAINS || req.get('host');
+      const redirectUri = `https://${host}/api/auth/${system}/callback`;
       
       const authUrls = {
         slack: `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=chat:write,channels:read,users:read&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`,
@@ -725,7 +726,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Exchange code for access token
-      const redirectUri = `https://${req.get('host')}/api/auth/slack/callback`;
+      const host = process.env.REPLIT_DOMAINS || req.get('host');
+      const redirectUri = `https://${host}/api/auth/slack/callback`;
       const workspaceInfo = await slackService.exchangeCodeForToken(code as string, redirectUri);
       
       console.log('Slack workspace connected:', workspaceInfo.teamName);
