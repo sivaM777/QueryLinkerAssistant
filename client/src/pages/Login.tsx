@@ -323,9 +323,13 @@ export default function Login() {
                     />
                     <label htmlFor="remember" className="ml-2 text-sm text-gray-600">Remember Me</label>
                   </div>
-                  <a href="#" className="text-sm text-blue-600 hover:text-blue-800">
+                  <button 
+                    type="button"
+                    onClick={() => setLocation('/forgot-password')}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
                     Forgot Password?
-                  </a>
+                  </button>
                 </div>
 
                 <Button

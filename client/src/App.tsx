@@ -20,6 +20,8 @@ import IncidentManagement from "@/pages/IncidentManagement";
 import AdvancedAnalytics from "@/pages/AdvancedAnalytics";
 import SlackCommands from "@/pages/SlackCommands";
 import NotionWorkspace from "@/pages/NotionWorkspace";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
 import { useState, useEffect } from "react";
@@ -43,13 +45,13 @@ function Router() {
 
   // Redirect to landing if not authenticated and trying to access protected routes
   useEffect(() => {
-    if (!isAuthenticated && location !== "/login" && location !== "/landing" && location !== "/") {
+    if (!isAuthenticated && location !== "/login" && location !== "/landing" && location !== "/" && location !== "/forgot-password" && !location.startsWith("/reset-password")) {
       setLocation("/landing");
     }
   }, [isAuthenticated, location, setLocation]);
 
   // Check if current route should show the dashboard layout
-  const isDashboardRoute = location !== "/landing" && location !== "/login" && isAuthenticated;
+  const isDashboardRoute = location !== "/landing" && location !== "/login" && location !== "/forgot-password" && !location.startsWith("/reset-password") && isAuthenticated;
 
   if (!isDashboardRoute) {
     // Render landing or login page without dashboard layout
@@ -58,6 +60,8 @@ function Router() {
         <Route path="/" component={Landing} />
         <Route path="/landing" component={Landing} />
         <Route path="/login" component={Login} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
       </Switch>
     );
   }
