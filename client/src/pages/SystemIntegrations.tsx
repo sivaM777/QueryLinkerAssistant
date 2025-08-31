@@ -45,7 +45,7 @@ export default function SystemIntegrations() {
 
   const addSystemMutation = useMutation({
     mutationFn: async (systemData: any) => {
-      await apiRequest("/api/systems", { method: "POST", body: JSON.stringify(systemData) });
+      await apiRequest("/api/systems", { method: "POST", body: systemData });
     },
     onSuccess: () => {
       toast({
