@@ -646,7 +646,14 @@ export default function SystemWorkspace() {
               ) : system === 'slack' && workspaceConfig?.customInterface ? (
                 <SlackInterface systemInfo={systemInfo} />
               ) : system === 'jira' ? (
-                <JiraPanel />
+                <div className="p-6 bg-white dark:bg-slate-800 min-h-[400px]">
+                  <div className="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg mb-4">
+                    <h2 className="text-xl font-bold text-blue-900 dark:text-blue-100">🎯 Jira Workspace</h2>
+                    <p className="text-blue-700 dark:text-blue-200">System: {system}</p>
+                    <p className="text-blue-700 dark:text-blue-200">Auth Status: {authStatus?.authenticated ? 'Connected' : 'Not Connected'}</p>
+                  </div>
+                  <JiraPanel />
+                </div>
               ) : system === 'googlemeet' && workspaceConfig?.customInterface ? (
                 <GoogleMeetInterface systemInfo={systemInfo} />
               ) : workspaceConfig?.embedUrl ? (
