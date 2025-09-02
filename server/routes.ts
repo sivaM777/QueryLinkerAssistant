@@ -671,7 +671,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         googlemeet: googleMeetService.getAuthUrl(),
         zendesk: `https://${process.env.ZENDESK_SUBDOMAIN}.zendesk.com/oauth/authorizations/new?response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&client_id=${process.env.ZENDESK_CLIENT_ID}&scope=read`,
         notion: `https://api.notion.com/v1/oauth/authorize?client_id=${process.env.NOTION_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}`,
-        linear: `https://linear.app/oauth/authorize?client_id=${process.env.LINEAR_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read&response_type=code`
+        linear: `https://linear.app/oauth/authorize?client_id=${process.env.LINEAR_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read&response_type=code`,
+        jira: `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${process.env.JIRA_CLIENT_ID}&scope=read:jira-work%20read:jira-user%20read:project:jira&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(JSON.stringify({ system: 'jira' }))}&response_type=code&prompt=consent`
       };
       
       const authUrl = authUrls[system as keyof typeof authUrls];
@@ -751,6 +752,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <body>
             <h2>Connection Failed</h2>
             <p>An error occurred while connecting to Slack. Please try again.</p>
+            <script>
+              setTimeout(() => window.close(), 3000);
+            </script>
+          </body>
+        </html>
+      `);
+    }
+  });
+
+  // Jira OAuth callback handler
+  app.get('/api/auth/jira/callback', async (req, res) => {
+    try {
+      const { code, error, state } = req.query;
+      
+      if (error) {
+        console.error('Jira OAuth error:', error);
+        return res.send(`
+          <html>
+            <body>
+              <h2>Connection Failed</h2>
+              <p>Failed to connect to Jira: ${error}</p>
+              <script>
+                setTimeout(() => window.close(), 3000);
+              </script>
+            </body>
+          </html>
+        `);
+      }
+
+      if (!code) {
+        return res.send(`
+          <html>
+            <body>
+              <h2>Connection Failed</h2>
+              <p>No authorization code received from Jira</p>
+              <script>
+                setTimeout(() => window.close(), 3000);
+              </script>
+            </body>
+          </html>
+        `);
+      }
+
+      // Exchange code for access token
+      const host = process.env.REPLIT_DOMAINS || req.get('host');
+      const redirectUri = `https://${host}/api/auth/jira/callback`;
+      
+      const tokenResponse = await fetch('https://auth.atlassian.com/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          grant_type: 'authorization_code',
+          client_id: process.env.JIRA_CLIENT_ID,
+          client_secret: process.env.JIRA_CLIENT_SECRET,
+          code: code as string,
+          redirect_uri: redirectUri,
+        }),
+      });
+
+      const tokenData = await tokenResponse.json();
+
+      if (!tokenResponse.ok) {
+        console.error('Jira token exchange error:', tokenData);
+        throw new Error('Failed to exchange code for token');
+      }
+
+      // Get user's accessible resources (Jira sites)
+      const resourceResponse = await fetch('https://api.atlassian.com/oauth/token/accessible-resources', {
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      const resources = await resourceResponse.json();
+      
+      if (!resources || resources.length === 0) {
+        throw new Error('No accessible Jira resources found');
+      }
+
+      // Use the first resource (site)
+      const jiraSite = resources[0];
+      
+      // Create or update Jira data source
+      const jiraConfig = {
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        expires_at: new Date(Date.now() + tokenData.expires_in * 1000),
+        site_id: jiraSite.id,
+        site_name: jiraSite.name,
+        site_url: jiraSite.url,
+        scope: tokenData.scope,
+      };
+
+      // Create or update the Jira data source in the database
+      const existingDataSources = await storage.getDataSources();
+      const existingJira = existingDataSources.find(ds => ds.type === 'jira');
+
+      if (existingJira) {
+        await storage.updateDataSource(existingJira.id, {
+          baseUrl: jiraSite.url,
+          oauthConfig: jiraConfig,
+          isActive: true,
+          lastSyncAt: new Date(),
+        });
+      } else {
+        await storage.createDataSource({
+          name: `Jira - ${jiraSite.name}`,
+          type: 'jira',
+          baseUrl: jiraSite.url,
+          oauthConfig: jiraConfig,
+          syncInterval: 300, // 5 minutes
+          isActive: true,
+        });
+      }
+
+      console.log('Jira site connected:', jiraSite.name);
+      
+      return res.send(`
+        <html>
+          <body>
+            <h2>Successfully Connected!</h2>
+            <p>Your Jira site "${jiraSite.name}" has been connected to QueryLinker.</p>
+            <p>You can now close this window and return to the application.</p>
+            <script>
+              setTimeout(() => window.close(), 3000);
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Error in Jira OAuth callback:', error);
+      return res.send(`
+        <html>
+          <body>
+            <h2>Connection Failed</h2>
+            <p>An error occurred while connecting to Jira. Please try again.</p>
             <script>
               setTimeout(() => window.close(), 3000);
             </script>
@@ -863,6 +1003,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             issues: '/api/integrations/linear/issues',
             projects: '/api/integrations/linear/projects'
           }
+        },
+        jira: {
+          embedUrl: null, // Don't embed external Jira - use custom interface
+          features: ['issues', 'projects', 'workflows', 'reporting'],
+          apiEndpoints: {
+            issues: '/api/integrations/jira/issues',
+            projects: '/api/integrations/jira/projects',
+            create: '/api/integrations/jira/issues'
+          },
+          customInterface: true // Flag to show custom interface instead of iframe
         }
       };
       
@@ -875,6 +1025,204 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error(`Error fetching ${req.params.system} workspace config:`, error);
       res.status(500).json({ message: 'Failed to fetch workspace config' });
+    }
+  });
+
+  // Jira integration endpoints
+  app.get('/api/integrations/jira/projects', async (req, res) => {
+    try {
+      // Get Jira data source with OAuth config
+      const dataSources = await storage.getDataSources();
+      const jiraDataSource = dataSources.find(ds => ds.type === 'jira' && ds.isActive);
+      
+      if (!jiraDataSource || !jiraDataSource.oauthConfig) {
+        return res.status(401).json({ message: 'Jira not connected or configured' });
+      }
+
+      const { access_token, site_url } = jiraDataSource.oauthConfig;
+      
+      // Fetch projects from Jira
+      const response = await fetch(`${site_url}/rest/api/3/project`, {
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Jira API error: ${response.status}`);
+      }
+
+      const projects = await response.json();
+      res.json(projects);
+    } catch (error) {
+      console.error('Error fetching Jira projects:', error);
+      res.status(500).json({ message: 'Failed to fetch projects' });
+    }
+  });
+
+  app.get('/api/integrations/jira/issues', async (req, res) => {
+    try {
+      // Get Jira data source with OAuth config
+      const dataSources = await storage.getDataSources();
+      const jiraDataSource = dataSources.find(ds => ds.type === 'jira' && ds.isActive);
+      
+      if (!jiraDataSource || !jiraDataSource.oauthConfig) {
+        return res.status(401).json({ message: 'Jira not connected or configured' });
+      }
+
+      const { access_token, site_url } = jiraDataSource.oauthConfig;
+      const { project, status } = req.query;
+      
+      // Build JQL query
+      let jql = 'ORDER BY updated DESC';
+      const conditions = [];
+      
+      if (project) {
+        conditions.push(`project = "${project}"`);
+      }
+      if (status && status !== 'all') {
+        conditions.push(`status = "${status}"`);
+      }
+      
+      if (conditions.length > 0) {
+        jql = `${conditions.join(' AND ')} ORDER BY updated DESC`;
+      }
+      
+      // Fetch issues from Jira
+      const response = await fetch(`${site_url}/rest/api/3/search`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jql,
+          maxResults: 100,
+          fields: [
+            'summary',
+            'status',
+            'priority',
+            'issuetype',
+            'assignee',
+            'reporter',
+            'created',
+            'updated',
+            'description',
+            'project'
+          ]
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Jira API error: ${response.status}`);
+      }
+
+      const searchResults = await response.json();
+      
+      // Transform Jira issues to our format
+      const issues = searchResults.issues.map((issue: any) => ({
+        id: issue.id,
+        key: issue.key,
+        summary: issue.fields.summary,
+        status: issue.fields.status.name,
+        priority: issue.fields.priority.name,
+        issueType: issue.fields.issuetype.name,
+        assignee: issue.fields.assignee ? {
+          displayName: issue.fields.assignee.displayName,
+          avatarUrl: issue.fields.assignee.avatarUrls?.['24x24']
+        } : null,
+        reporter: issue.fields.reporter ? {
+          displayName: issue.fields.reporter.displayName,
+          avatarUrl: issue.fields.reporter.avatarUrls?.['24x24']
+        } : null,
+        created: issue.fields.created,
+        updated: issue.fields.updated,
+        description: issue.fields.description,
+        project: {
+          key: issue.fields.project.key,
+          name: issue.fields.project.name
+        }
+      }));
+
+      res.json(issues);
+    } catch (error) {
+      console.error('Error fetching Jira issues:', error);
+      res.status(500).json({ message: 'Failed to fetch issues' });
+    }
+  });
+
+  app.post('/api/integrations/jira/issues', async (req, res) => {
+    try {
+      // Get Jira data source with OAuth config
+      const dataSources = await storage.getDataSources();
+      const jiraDataSource = dataSources.find(ds => ds.type === 'jira' && ds.isActive);
+      
+      if (!jiraDataSource || !jiraDataSource.oauthConfig) {
+        return res.status(401).json({ message: 'Jira not connected or configured' });
+      }
+
+      const { access_token, site_url } = jiraDataSource.oauthConfig;
+      const { summary, description, priority, issueType, projectKey } = req.body;
+      
+      if (!summary || !projectKey) {
+        return res.status(400).json({ message: 'Summary and project key are required' });
+      }
+
+      // Create issue in Jira
+      const issueData = {
+        fields: {
+          project: {
+            key: projectKey
+          },
+          summary,
+          description: {
+            type: 'doc',
+            version: 1,
+            content: [{
+              type: 'paragraph',
+              content: [{
+                type: 'text',
+                text: description || ''
+              }]
+            }]
+          },
+          issuetype: {
+            name: issueType || 'Task'
+          },
+          priority: {
+            name: priority || 'Medium'
+          }
+        }
+      };
+
+      const response = await fetch(`${site_url}/rest/api/3/issue`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(issueData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Jira create issue error:', errorData);
+        throw new Error(`Failed to create issue: ${response.status}`);
+      }
+
+      const createdIssue = await response.json();
+      
+      res.json({
+        id: createdIssue.id,
+        key: createdIssue.key,
+        url: `${site_url}/browse/${createdIssue.key}`
+      });
+    } catch (error) {
+      console.error('Error creating Jira issue:', error);
+      res.status(500).json({ message: 'Failed to create issue' });
     }
   });
 
@@ -1245,6 +1593,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error starting sync:", error);
       res.status(500).json({ message: "Failed to start sync" });
+    }
+  });
+
+  // Jira remote link endpoints
+  app.get('/jira/branch', async (req, res) => {
+    try {
+      const { issueKey } = req.query;
+      
+      if (!issueKey) {
+        return res.status(400).json({ message: 'Issue key is required' });
+      }
+
+      // Redirect to QueryLinker frontend with Jira issue context
+      const redirectUrl = `/incident/${issueKey}?action=create-branch`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('Error handling Jira branch creation:', error);
+      res.status(500).json({ message: 'Failed to handle branch creation' });
+    }
+  });
+
+  app.get('/jira/create-flag', async (req, res) => {
+    try {
+      const { issueKey } = req.query;
+      
+      if (!issueKey) {
+        return res.status(400).json({ message: 'Issue key is required' });
+      }
+
+      // Redirect to QueryLinker frontend with feature flag creation context
+      const redirectUrl = `/incident/${issueKey}?action=create-flag`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('Error handling Jira flag creation:', error);
+      res.status(500).json({ message: 'Failed to handle flag creation' });
+    }
+  });
+
+  app.get('/jira/link-flag', async (req, res) => {
+    try {
+      const { issueKey } = req.query;
+      
+      if (!issueKey) {
+        return res.status(400).json({ message: 'Issue key is required' });
+      }
+
+      // Redirect to QueryLinker frontend with feature flag linking context
+      const redirectUrl = `/incident/${issueKey}?action=link-flag`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('Error handling Jira flag linking:', error);
+      res.status(500).json({ message: 'Failed to handle flag linking' });
+    }
+  });
+
+  app.get('/jira/flags', async (req, res) => {
+    try {
+      const { issueKey } = req.query;
+      
+      if (!issueKey) {
+        return res.status(400).json({ message: 'Issue key is required' });
+      }
+
+      // Redirect to QueryLinker frontend showing flags for this issue
+      const redirectUrl = `/incident/${issueKey}?view=flags`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('Error handling Jira flags listing:', error);
+      res.status(500).json({ message: 'Failed to list flags' });
+    }
+  });
+
+  // Additional remote link endpoints
+  app.get('/incident/:issueKey', async (req, res) => {
+    try {
+      const { issueKey } = req.params;
+      const { action, view } = req.query;
+      
+      // This would typically redirect to the frontend incident management page
+      // For now, serve a simple HTML page showing the context
+      res.send(`
+        <html>
+          <head>
+            <title>QueryLinker - Jira Issue ${issueKey}</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; }
+              .header { color: #0052cc; margin-bottom: 20px; }
+              .info { background: #f4f5f7; padding: 15px; border-radius: 8px; margin: 10px 0; }
+              .actions { margin-top: 20px; }
+              .action { display: inline-block; margin: 5px; padding: 10px 15px; background: #0052cc; color: white; text-decoration: none; border-radius: 4px; }
+            </style>
+          </head>
+          <body>
+            <h1 class="header">QueryLinker Integration</h1>
+            <div class="info">
+              <strong>Jira Issue:</strong> ${issueKey}<br>
+              ${action ? `<strong>Action:</strong> ${action}<br>` : ''}
+              ${view ? `<strong>View:</strong> ${view}<br>` : ''}
+            </div>
+            <div class="actions">
+              <a href="/search?q=${issueKey}" class="action">Search Knowledge Base</a>
+              <a href="/sla/${issueKey}" class="action">View SLA Status</a>
+              <a href="/analytics?filter=${issueKey}" class="action">System Analytics</a>
+            </div>
+            <p>This integration allows you to manage incidents, search knowledge bases, monitor SLAs, and view analytics for Jira issues directly from QueryLinker.</p>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Error handling Jira incident view:', error);
+      res.status(500).json({ message: 'Failed to load incident view' });
+    }
+  });
+
+  app.get('/sla/:issueKey', async (req, res) => {
+    try {
+      const { issueKey } = req.params;
+      
+      // Serve a basic SLA status page for the Jira issue
+      res.send(`
+        <html>
+          <head>
+            <title>SLA Status - ${issueKey}</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; }
+              .header { color: #0052cc; }
+              .sla-box { background: #e3fcef; border-left: 4px solid #00875a; padding: 15px; margin: 10px 0; }
+              .warning { background: #fff4e6; border-left: 4px solid #ff8b00; padding: 15px; margin: 10px 0; }
+            </style>
+          </head>
+          <body>
+            <h1 class="header">SLA Status for ${issueKey}</h1>
+            <div class="sla-box">
+              <strong>Response Time SLA:</strong> Met (2h 15m remaining)<br>
+              <strong>Resolution Time SLA:</strong> On Track (1d 4h remaining)
+            </div>
+            <div class="warning">
+              <strong>Note:</strong> This is a demo integration. Real SLA data would be calculated based on your Jira issue data and configured SLA targets.
+            </div>
+            <a href="/incident/${issueKey}">← Back to Issue</a>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Error handling SLA view:', error);
+      res.status(500).json({ message: 'Failed to load SLA status' });
     }
   });
 

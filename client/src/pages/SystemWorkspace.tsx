@@ -24,6 +24,7 @@ import {
   Users
 } from "lucide-react";
 import SlackPanel from "@/components/SystemPanels/SlackPanel";
+import JiraPanel from "@/components/SystemPanels/JiraPanel";
 
 interface WorkspaceConfig {
   embedUrl: string | null;
@@ -385,6 +386,12 @@ export default function SystemWorkspace() {
         icon: "📋",
         color: "bg-purple-700",
         description: "Issue tracking and project management"
+      },
+      jira: {
+        name: "Jira",
+        icon: "🎯",
+        color: "bg-orange-600",
+        description: "Issue tracking and project management"
       }
     };
     
@@ -638,6 +645,8 @@ export default function SystemWorkspace() {
                 </div>
               ) : system === 'slack' && workspaceConfig?.customInterface ? (
                 <SlackInterface systemInfo={systemInfo} />
+              ) : system === 'jira' && workspaceConfig?.customInterface ? (
+                <JiraPanel />
               ) : system === 'googlemeet' && workspaceConfig?.customInterface ? (
                 <GoogleMeetInterface systemInfo={systemInfo} />
               ) : workspaceConfig?.embedUrl ? (

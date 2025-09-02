@@ -266,6 +266,162 @@ export class AzureStatusConnector extends BaseConnector {
   }
 }
 
+// Jira connector for issue tracking
+export class JiraConnector extends BaseConnector {
+  private get jiraBaseUrl(): string {
+    return this.config.dataSource.baseUrl;
+  }
+
+  private get oauthConfig(): any {
+    return this.config.dataSource.oauthConfig;
+  }
+
+  async fetchIncidents(): Promise<InsertIncident[]> {
+    if (!this.oauthConfig?.access_token) {
+      throw new Error('Jira OAuth token not found');
+    }
+
+    const jql = 'project in (projectsWhereUserHasPermission("BROWSE_PROJECTS")) AND status != Done ORDER BY updated DESC';
+    const url = `${this.jiraBaseUrl}/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=100`;
+    
+    const data = await this.makeRequest(url, {
+      'Authorization': `Bearer ${this.oauthConfig.access_token}`,
+      'Accept': 'application/json',
+    });
+
+    return data.issues?.map((issue: any) => ({
+      externalId: issue.id,
+      dataSourceId: this.config.dataSource.id,
+      systemName: 'Jira',
+      title: issue.fields.summary,
+      description: issue.fields.description || '',
+      status: this.mapStatus(issue.fields.status.name),
+      severity: this.mapSeverity(issue.fields.priority?.name || 'Medium'),
+      impact: this.mapImpact(issue.fields.priority?.name || 'Medium'),
+      startedAt: new Date(issue.fields.created),
+      resolvedAt: issue.fields.resolutiondate ? new Date(issue.fields.resolutiondate) : null,
+      updatedAt: new Date(issue.fields.updated),
+      externalUrl: `${this.jiraBaseUrl}/browse/${issue.key}`,
+      affectedServices: [issue.fields.project.name],
+      tags: ['jira', issue.fields.issuetype.name, issue.fields.status.name],
+      metadata: {
+        source: 'jira',
+        issueKey: issue.key,
+        projectKey: issue.fields.project.key,
+        issueType: issue.fields.issuetype.name,
+        reporter: issue.fields.reporter?.displayName,
+        assignee: issue.fields.assignee?.displayName,
+      },
+    })) || [];
+  }
+
+  async fetchComponents(): Promise<InsertServiceComponent[]> {
+    if (!this.oauthConfig?.access_token) {
+      throw new Error('Jira OAuth token not found');
+    }
+
+    const url = `${this.jiraBaseUrl}/rest/api/3/project`;
+    
+    const data = await this.makeRequest(url, {
+      'Authorization': `Bearer ${this.oauthConfig.access_token}`,
+      'Accept': 'application/json',
+    });
+
+    return data?.map((project: any, index: number) => ({
+      dataSourceId: this.config.dataSource.id,
+      externalId: project.id,
+      name: project.name,
+      description: project.description || `Jira project: ${project.key}`,
+      status: 'operational',
+      group: 'Jira Projects',
+      position: index,
+      showUptime: false,
+      metadata: {
+        source: 'jira',
+        projectKey: project.key,
+        projectType: project.projectTypeKey,
+      },
+    })) || [];
+  }
+
+  async fetchIncidentUpdates(incidentId: string): Promise<InsertIncidentUpdate[]> {
+    if (!this.oauthConfig?.access_token) {
+      throw new Error('Jira OAuth token not found');
+    }
+
+    const url = `${this.jiraBaseUrl}/rest/api/3/issue/${incidentId}/changelog`;
+    
+    try {
+      const data = await this.makeRequest(url, {
+        'Authorization': `Bearer ${this.oauthConfig.access_token}`,
+        'Accept': 'application/json',
+      });
+
+      return data.values?.map((change: any) => ({
+        incidentId: parseInt(incidentId),
+        updateType: 'status_change',
+        previousStatus: change.items.find((item: any) => item.field === 'status')?.fromString,
+        newStatus: this.mapStatus(change.items.find((item: any) => item.field === 'status')?.toString || ''),
+        message: `Updated by ${change.author.displayName}`,
+        timestamp: new Date(change.created),
+        metadata: {
+          source: 'jira',
+          changeId: change.id,
+          author: change.author.displayName,
+          items: change.items,
+        },
+      })) || [];
+    } catch (error) {
+      console.error(`Error fetching Jira issue updates for ${incidentId}:`, error);
+      return [];
+    }
+  }
+
+  private mapStatus(jiraStatus: string): string {
+    const statusMap: Record<string, string> = {
+      'To Do': 'investigating',
+      'In Progress': 'investigating',
+      'Done': 'resolved',
+      'Open': 'investigating',
+      'In Review': 'monitoring',
+      'Resolved': 'resolved',
+      'Closed': 'resolved',
+      'Blocked': 'identified',
+    };
+    return statusMap[jiraStatus] || 'investigating';
+  }
+
+  private mapSeverity(jiraPriority: string): string {
+    const severityMap: Record<string, string> = {
+      'Highest': 'critical',
+      'High': 'high',
+      'Medium': 'medium',
+      'Low': 'low',
+      'Lowest': 'low',
+      'Critical': 'critical',
+      'Major': 'high',
+      'Minor': 'medium',
+      'Trivial': 'low',
+    };
+    return severityMap[jiraPriority] || 'medium';
+  }
+
+  private mapImpact(jiraPriority: string): string {
+    const impactMap: Record<string, string> = {
+      'Highest': 'major_outage',
+      'High': 'partial_outage',
+      'Medium': 'degraded_performance',
+      'Low': 'operational',
+      'Lowest': 'operational',
+      'Critical': 'major_outage',
+      'Major': 'partial_outage',
+      'Minor': 'degraded_performance',
+      'Trivial': 'operational',
+    };
+    return impactMap[jiraPriority] || 'operational';
+  }
+}
+
 // Factory for creating connectors
 export class ConnectorFactory {
   static createConnector(dataSource: DataSource): BaseConnector {
@@ -278,6 +434,8 @@ export class ConnectorFactory {
         return new GitHubStatusConnector(config);
       case 'azure-status':
         return new AzureStatusConnector(config);
+      case 'jira':
+        return new JiraConnector(config);
       default:
         throw new Error(`Unsupported connector type: ${dataSource.type}`);
     }
