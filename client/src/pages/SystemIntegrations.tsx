@@ -138,6 +138,26 @@ export default function SystemIntegrations() {
         color: "teal",
         description: "IT service management platform",
       },
+      jira: {
+        icon: "🎯",
+        color: "orange",
+        description: "Issue tracking and project management",
+      },
+      confluence: {
+        icon: "📚",
+        color: "blue",
+        description: "Knowledge base and documentation",
+      },
+      github: {
+        icon: "💻",
+        color: "gray",
+        description: "Code repository and issue tracking",
+      },
+      "servicenow-kb": {
+        icon: "☁️",
+        color: "teal",
+        description: "ServiceNow Knowledge Base",
+      },
     };
     
     return configs[system.type as keyof typeof configs] || {
@@ -148,6 +168,10 @@ export default function SystemIntegrations() {
   };
 
   const availableSystems = [
+    { value: "jira", label: "Jira", icon: "🎯" },
+    { value: "confluence", label: "Confluence", icon: "📚" },
+    { value: "github", label: "GitHub", icon: "💻" },
+    { value: "servicenow-kb", label: "ServiceNow KB", icon: "☁️" },
     { value: "slack", label: "Slack", icon: "💬" },
     { value: "googlemeet", label: "Google Meet", icon: "📹" },
     { value: "servicenow-itsm", label: "ServiceNow ITSM", icon: "📋" },
