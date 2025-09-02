@@ -60,18 +60,22 @@ export default function JiraPanel() {
   const queryClient = useQueryClient();
 
   // Fetch Jira projects
-  const { data: projects = [], isLoading: projectsLoading } = useQuery<JiraProject[]>({
+  const { data: projects = [], isLoading: projectsLoading, error: projectsError } = useQuery<JiraProject[]>({
     queryKey: ['/api/integrations/jira/projects'],
     queryFn: async () => {
       const response = await apiRequest('/api/integrations/jira/projects');
-      if (!response.ok) throw new Error('Failed to fetch projects');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch projects');
+      }
       return await response.json();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: false,
   });
 
   // Fetch Jira issues
-  const { data: issues = [], isLoading: issuesLoading } = useQuery<JiraIssue[]>({
+  const { data: issues = [], isLoading: issuesLoading, error: issuesError } = useQuery<JiraIssue[]>({
     queryKey: ['/api/integrations/jira/issues', selectedProject, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -79,10 +83,14 @@ export default function JiraPanel() {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       
       const response = await apiRequest(`/api/integrations/jira/issues?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch issues');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch issues');
+      }
       return await response.json();
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: false,
   });
 
   const createIssueMutation = useMutation({
@@ -165,6 +173,50 @@ export default function JiraPanel() {
     issue.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
     issue.key.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Show error state if Jira integration is not properly configured
+  if (projectsError || issuesError) {
+    const errorMessage = (projectsError as any)?.message || (issuesError as any)?.message || 'Jira integration error';
+    
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            🎯 Jira Integration
+            <Badge variant="destructive">Connection Error</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 space-y-4">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle className="h-8 w-8 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Jira Integration Not Configured
+              </h3>
+              <p className="text-gray-500 dark:text-slate-400 mb-4">
+                {errorMessage.includes('not connected') ? 
+                  'Your Jira account needs to be properly connected with OAuth configuration.' :
+                  errorMessage
+                }
+              </p>
+              <Button
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/integrations/jira/projects'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/integrations/jira/issues'] });
+                }}
+                variant="outline"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry Connection
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
