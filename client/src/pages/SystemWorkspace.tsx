@@ -645,7 +645,7 @@ export default function SystemWorkspace() {
                 </div>
               ) : system === 'slack' && workspaceConfig?.customInterface ? (
                 <SlackInterface systemInfo={systemInfo} />
-              ) : system === 'jira' && workspaceConfig?.customInterface ? (
+              ) : system === 'jira' ? (
                 <JiraPanel />
               ) : system === 'googlemeet' && workspaceConfig?.customInterface ? (
                 <GoogleMeetInterface systemInfo={systemInfo} />
