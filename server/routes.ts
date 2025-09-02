@@ -142,8 +142,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Failed to send reset email" });
       }
 
+      // In development mode, provide the reset URL directly
+      const isDevelopment = !process.env.SMTP_HOST;
+      const responseMessage = isDevelopment 
+        ? `Development mode: Password reset link generated. Visit: ${resetUrl}`
+        : "If an account with that email exists, we've sent password reset instructions.";
+
       res.json({ 
-        message: "If an account with that email exists, we've sent password reset instructions." 
+        message: responseMessage,
+        ...(isDevelopment && { resetUrl, resetToken }) // Include reset info in development
       });
     } catch (error) {
       console.error("Error in forgot password:", error);

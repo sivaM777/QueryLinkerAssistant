@@ -9,21 +9,34 @@ interface ResetEmailData {
 }
 
 class EmailService {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null;
+  private isConfigured: boolean;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    // Check if SMTP configuration is available
+    this.isConfigured = !!(
+      process.env.SMTP_HOST && 
+      process.env.SMTP_USER && 
+      process.env.SMTP_PASS
+    );
+
+    if (this.isConfigured) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+    } else {
+      this.transporter = null;
+      console.log('🔧 Email service running in development mode - SMTP not configured');
+    }
   }
 
   generateResetToken(): string {
@@ -32,6 +45,16 @@ class EmailService {
 
   async sendPasswordResetEmail(data: ResetEmailData): Promise<boolean> {
     try {
+      // If SMTP is not configured, use development mode
+      if (!this.isConfigured || !this.transporter) {
+        console.log('🔧 Development Mode - Password Reset Email');
+        console.log('To:', data.to);
+        console.log('Reset URL:', data.resetUrl);
+        console.log('Reset Token:', data.resetToken);
+        console.log('📧 In production, this would be sent via email');
+        return true; // Return success for development
+      }
+
       const htmlContent = this.getPasswordResetEmailTemplate(data);
       
       const mailOptions = {
@@ -206,6 +229,11 @@ If you need assistance, please contact our support team.
 
   async verifyConnection(): Promise<boolean> {
     try {
+      if (!this.isConfigured || !this.transporter) {
+        console.log('🔧 Development mode: SMTP verification skipped');
+        return true;
+      }
+      
       await this.transporter.verify();
       console.log('SMTP connection verified successfully');
       return true;
