@@ -138,21 +138,6 @@ export default function SystemIntegrations() {
         color: "teal",
         description: "IT service management platform",
       },
-      jira: {
-        icon: "🎯",
-        color: "orange",
-        description: "Issue tracking and project management",
-      },
-      confluence: {
-        icon: "📚",
-        color: "blue",
-        description: "Knowledge base and documentation",
-      },
-      github: {
-        icon: "💻",
-        color: "gray",
-        description: "Code repository and issue tracking",
-      },
       "servicenow-kb": {
         icon: "☁️",
         color: "teal",

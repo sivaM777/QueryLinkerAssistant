@@ -280,11 +280,11 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
         {connectedSystemTypes.length > 0 && (
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
             <p className="px-3 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-              Connected Workspaces ({connectedSystemTypes.filter(type => ['slack', 'googlemeet', 'zendesk', 'notion', 'linear'].includes(type)).length})
+              Connected Workspaces ({connectedSystemTypes.filter(type => ['slack', 'googlemeet', 'zendesk', 'notion', 'linear', 'jira'].includes(type)).length})
             </p>
             <div className="space-y-1">
               {connectedSystemTypes
-                .filter((systemType: string) => ['slack', 'googlemeet', 'zendesk', 'notion', 'linear'].includes(systemType))
+                .filter((systemType: string) => ['slack', 'googlemeet', 'zendesk', 'notion', 'linear', 'jira'].includes(systemType))
                 .slice(0, 4)
                 .map((systemType: string) => {
                   const systemConfigs = {
@@ -292,7 +292,8 @@ function SidebarContent({ sidebarCollapsed = false }: { sidebarCollapsed?: boole
                     googlemeet: { name: "Google Meet", icon: "📹" },
                     zendesk: { name: "Zendesk", icon: "📋" },
                     notion: { name: "Notion", icon: "📝" },
-                    linear: { name: "Linear", icon: "📋" }
+                    linear: { name: "Linear", icon: "📋" },
+                    jira: { name: "Jira", icon: "🎯" }
                   };
                   const config = systemConfigs[systemType as keyof typeof systemConfigs] || { name: systemType, icon: "🔧" };
 
