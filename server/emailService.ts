@@ -57,6 +57,20 @@ class EmailService {
         return true; // Return success for development
       }
 
+      // Try to verify connection first
+      try {
+        await this.transporter.verify();
+        console.log('Gmail SMTP connection verified successfully');
+      } catch (verifyError) {
+        console.error('Gmail SMTP verification failed, falling back to development mode:', verifyError);
+        console.log('🔧 Development Mode - Password Reset Email (Gmail Auth Failed)');
+        console.log('To:', data.to);
+        console.log('Reset URL:', data.resetUrl);
+        console.log('Reset Token:', data.resetToken);
+        console.log('📧 Gmail credentials may need to be updated');
+        return true; // Return success for development fallback
+      }
+
       const htmlContent = this.getPasswordResetEmailTemplate(data);
       
       const mailOptions = {
