@@ -25,6 +25,10 @@ import {
 } from "lucide-react";
 import SlackPanel from "@/components/SystemPanels/SlackPanel";
 import JiraPanel from "@/components/SystemPanels/JiraPanel";
+import ZendeskPanel from "@/components/SystemPanels/ZendeskPanel";
+import NotionPanel from "@/components/SystemPanels/NotionPanel";
+import LinearPanel from "@/components/SystemPanels/LinearPanel";
+import ServiceNowPanel from "@/components/SystemPanels/ServiceNowPanel";
 
 interface WorkspaceConfig {
   embedUrl: string | null;
@@ -656,6 +660,42 @@ export default function SystemWorkspace() {
                 </div>
               ) : system === 'googlemeet' && workspaceConfig?.customInterface ? (
                 <GoogleMeetInterface systemInfo={systemInfo} />
+              ) : system === 'zendesk' ? (
+                <div className="p-6 bg-white dark:bg-slate-800 min-h-[400px]">
+                  <div className="bg-orange-100 dark:bg-orange-900 p-4 rounded-lg mb-4">
+                    <h2 className="text-xl font-bold text-orange-900 dark:text-orange-100">🎫 Zendesk Workspace</h2>
+                    <p className="text-orange-700 dark:text-orange-200">System: {system}</p>
+                    <p className="text-orange-700 dark:text-orange-200">Auth Status: {authStatus?.authenticated ? 'Connected' : 'Not Connected'}</p>
+                  </div>
+                  <ZendeskPanel />
+                </div>
+              ) : system === 'notion' ? (
+                <div className="p-6 bg-white dark:bg-slate-800 min-h-[400px]">
+                  <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg mb-4">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">📝 Notion Workspace</h2>
+                    <p className="text-gray-700 dark:text-gray-200">System: {system}</p>
+                    <p className="text-gray-700 dark:text-gray-200">Auth Status: {authStatus?.authenticated ? 'Connected' : 'Not Connected'}</p>
+                  </div>
+                  <NotionPanel />
+                </div>
+              ) : system === 'linear' ? (
+                <div className="p-6 bg-white dark:bg-slate-800 min-h-[400px]">
+                  <div className="bg-purple-100 dark:bg-purple-900 p-4 rounded-lg mb-4">
+                    <h2 className="text-xl font-bold text-purple-900 dark:text-purple-100">📈 Linear Workspace</h2>
+                    <p className="text-purple-700 dark:text-purple-200">System: {system}</p>
+                    <p className="text-purple-700 dark:text-purple-200">Auth Status: {authStatus?.authenticated ? 'Connected' : 'Not Connected'}</p>
+                  </div>
+                  <LinearPanel />
+                </div>
+              ) : system === 'servicenow' ? (
+                <div className="p-6 bg-white dark:bg-slate-800 min-h-[400px]">
+                  <div className="bg-green-100 dark:bg-green-900 p-4 rounded-lg mb-4">
+                    <h2 className="text-xl font-bold text-green-900 dark:text-green-100">🔧 ServiceNow Workspace</h2>
+                    <p className="text-green-700 dark:text-green-200">System: {system}</p>
+                    <p className="text-green-700 dark:text-green-200">Auth Status: {authStatus?.authenticated ? 'Connected' : 'Not Connected'}</p>
+                  </div>
+                  <ServiceNowPanel />
+                </div>
               ) : workspaceConfig?.embedUrl ? (
                 <iframe
                   src={workspaceConfig.embedUrl}
