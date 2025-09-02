@@ -24,14 +24,16 @@ class EmailService {
         service: 'gmail',
         host: 'smtp.gmail.com',
         port: 587,
-        secure: false, // true for 465, false for other ports
+        secure: false,
         auth: {
           user: process.env.GMAIL_USER,
-          pass: process.env.GMAIL_PASS,
+          pass: process.env.GMAIL_PASS?.replace(/\s/g, ''), // Remove spaces from app password
         },
         tls: {
           rejectUnauthorized: false
-        }
+        },
+        debug: false,
+        logger: false
       });
     } else {
       this.transporter = null;
