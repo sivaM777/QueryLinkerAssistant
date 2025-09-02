@@ -1,11 +1,10 @@
 import nodemailer from 'nodemailer';
 import { randomBytes } from 'crypto';
 
-interface ResetEmailData {
+interface VerificationEmailData {
   to: string;
   firstName: string;
-  resetToken: string;
-  resetUrl: string;
+  verificationCode: string;
 }
 
 class EmailService {
@@ -47,19 +46,19 @@ class EmailService {
     }
   }
 
-  generateResetToken(): string {
-    return randomBytes(32).toString('hex');
+  generateVerificationCode(): string {
+    // Generate a 6-digit numeric code
+    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  async sendPasswordResetEmail(data: ResetEmailData): Promise<boolean> {
+  async sendPasswordResetEmail(data: VerificationEmailData): Promise<boolean> {
     try {
       // If Gmail SMTP is not configured, use development mode
       if (!this.isConfigured || !this.transporter) {
         console.log('🔧 Development Mode - Password Reset Email (No SMTP config)');
         console.log('To:', data.to);
-        console.log('Reset URL:', data.resetUrl);
-        console.log('Reset Token:', data.resetToken);
-        console.log('📧 Copy the Reset URL above to test password reset functionality');
+        console.log('Verification Code:', data.verificationCode);
+        console.log('📧 Enter the verification code above to test password reset functionality');
         console.log('================================================================================');
         return true; // Return success for development
       }
@@ -75,14 +74,13 @@ class EmailService {
         console.error('❌ Gmail SMTP verification failed:', verifyError);
         console.log('🔧 Falling back to development mode');
         console.log('To:', data.to);
-        console.log('Reset URL:', data.resetUrl);
-        console.log('Reset Token:', data.resetToken);
+        console.log('Verification Code:', data.verificationCode);
         console.log('📧 Gmail credentials may need to be updated - check account settings');
         console.log('================================================================================');
         return true; // Return success for development fallback
       }
 
-      const htmlContent = this.getPasswordResetEmailTemplate(data);
+      const htmlContent = this.getVerificationCodeEmailTemplate(data);
       
       const mailOptions = {
         from: {
@@ -90,13 +88,13 @@ class EmailService {
           address: process.env.GMAIL_USER!
         },
         to: data.to,
-        subject: 'Password Reset Request - QueryLinker',
+        subject: 'Password Reset Verification Code - QueryLinker',
         html: htmlContent,
-        text: this.getPasswordResetTextContent(data)
+        text: this.getVerificationCodeTextContent(data)
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      console.log('Password reset email sent successfully:', result.messageId);
+      console.log('Password reset verification email sent successfully:', result.messageId);
       return true;
     } catch (error) {
       console.error('Failed to send password reset email:', error);
@@ -104,7 +102,7 @@ class EmailService {
     }
   }
 
-  private getPasswordResetEmailTemplate(data: ResetEmailData): string {
+  private getVerificationCodeEmailTemplate(data: VerificationEmailData): string {
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -188,7 +186,7 @@ class EmailService {
     <div class="container">
         <div class="header">
             <div class="logo">QueryLinker</div>
-            <h1 class="title">Password Reset Request</h1>
+            <h1 class="title">Password Reset Verification</h1>
         </div>
         
         <div class="content">
@@ -196,25 +194,24 @@ class EmailService {
             
             <p>We received a request to reset your password for your QueryLinker account. If you didn't make this request, you can safely ignore this email.</p>
             
-            <p>To reset your password, click the button below:</p>
+            <p>Your verification code is:</p>
             
-            <div style="text-align: center;">
-                <a href="${data.resetUrl}" class="reset-button">Reset Your Password</a>
+            <div style="text-align: center; margin: 30px 0;">
+                <div style="display: inline-block; background-color: #f3f4f6; border: 2px solid #2563eb; border-radius: 12px; padding: 20px 40px; font-family: 'Courier New', monospace; font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">${data.verificationCode}</div>
             </div>
+            
+            <p style="text-align: center; font-size: 18px; font-weight: 600; color: #1f2937;">Enter this code in QueryLinker to reset your password</p>
             
             <div class="security-note">
                 <strong>🔒 Security Notice:</strong>
                 <ul style="margin: 10px 0; padding-left: 20px;">
-                    <li>This link will expire in 1 hour for your security</li>
+                    <li>This verification code will expire in 10 minutes for your security</li>
                     <li>If you didn't request this reset, please contact our support team</li>
-                    <li>Never share this link with anyone</li>
+                    <li>Never share this code with anyone</li>
                 </ul>
             </div>
             
-            <p class="expiry-note">⏰ This reset link will expire in 60 minutes.</p>
-            
-            <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; background-color: #f3f4f6; padding: 10px; border-radius: 4px; font-family: monospace;">${data.resetUrl}</p>
+            <p class="expiry-note">⏰ This verification code will expire in 10 minutes.</p>
         </div>
         
         <div class="footer">
@@ -228,23 +225,26 @@ class EmailService {
     `;
   }
 
-  private getPasswordResetTextContent(data: ResetEmailData): string {
+  private getVerificationCodeTextContent(data: VerificationEmailData): string {
     return `
-Password Reset Request - QueryLinker
+Password Reset Verification Code - QueryLinker
 
 Hello ${data.firstName || 'there'},
 
 We received a request to reset your password for your QueryLinker account. If you didn't make this request, you can safely ignore this email.
 
-To reset your password, visit this link:
-${data.resetUrl}
+Your verification code is:
+
+${data.verificationCode}
+
+Enter this code in QueryLinker to reset your password.
 
 SECURITY NOTICE:
-- This link will expire in 1 hour for your security
+- This verification code will expire in 10 minutes for your security
 - If you didn't request this reset, please contact our support team
-- Never share this link with anyone
+- Never share this code with anyone
 
-This reset link will expire in 60 minutes.
+This verification code will expire in 10 minutes.
 
 Best regards,
 QueryLinker Team

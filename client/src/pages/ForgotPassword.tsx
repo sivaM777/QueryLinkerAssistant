@@ -33,8 +33,8 @@ export default function ForgotPassword() {
     onSuccess: (data) => {
       setIsSubmitted(true);
       toast({
-        title: "Email Sent",
-        description: "Check your email for password reset instructions.",
+        title: "Verification Code Sent",
+        description: "Check your email for the verification code.",
       });
     },
     onError: (error: any) => {
@@ -93,7 +93,7 @@ export default function ForgotPassword() {
                 Forgot Password?
               </h1>
               <p className="text-gray-600 text-sm">
-                No worries! Enter your email address and we'll send you a link to reset your password 🔐
+                No worries! Enter your email address and we'll send you a verification code to reset your password 🔐
               </p>
             </div>
 
@@ -122,7 +122,7 @@ export default function ForgotPassword() {
               >
                 {forgotPasswordMutation.isPending 
                   ? "Sending..." 
-                  : "Send Reset Link"
+                  : "Send Verification Code"
                 }
               </Button>
             </form>
@@ -153,22 +153,22 @@ export default function ForgotPassword() {
               Check Your Email
             </h1>
             <p className="text-gray-600 text-sm mb-6">
-              We've sent a password reset link to <strong>{email}</strong>
+              We've sent a verification code to <strong>{email}</strong>
             </p>
             
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
               <p className="text-sm text-blue-800">
                 <strong>📧 Check your inbox!</strong><br />
-                The email might take a few minutes to arrive. Don't forget to check your spam folder.
+                Your 6-digit verification code should arrive within a few minutes. Don't forget to check your spam folder.
               </p>
             </div>
 
             <div className="space-y-3">
               <Button
-                onClick={() => setLocation('/login')}
+                onClick={() => setLocation(`/verify-reset-code?email=${encodeURIComponent(email)}`)}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold"
               >
-                Back to Login
+                Enter Verification Code
               </Button>
               
               <button

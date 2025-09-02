@@ -120,37 +120,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Generate reset token
-      const resetToken = emailService.generateResetToken();
-      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+      // Generate verification code
+      const verificationCode = emailService.generateVerificationCode();
+      const resetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
-      // Store reset token in database
-      await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
-
-      // Create reset URL
-      const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`;
+      // Store verification code in database
+      await storage.setPasswordResetCode(user.id, verificationCode, resetExpires);
 
       // Send email
       const emailSent = await emailService.sendPasswordResetEmail({
         to: user.email!,
         firstName: user.firstName || 'User',
-        resetToken,
-        resetUrl
+        verificationCode
       });
 
       if (!emailSent) {
         return res.status(500).json({ message: "Failed to send reset email" });
       }
 
-      // In development mode, provide the reset URL directly
+      // In development mode, provide the verification code directly
       const isDevelopment = !process.env.SMTP_HOST;
       const responseMessage = isDevelopment 
-        ? `Development mode: Password reset link generated. Visit: ${resetUrl}`
-        : "If an account with that email exists, we've sent password reset instructions.";
+        ? `Development mode: Verification code sent. Code: ${verificationCode}`
+        : "If an account with that email exists, we've sent a verification code to your email.";
 
       res.json({ 
         message: responseMessage,
-        ...(isDevelopment && { resetUrl, resetToken }) // Include reset info in development
+        ...(isDevelopment && { verificationCode }) // Include code in development
       });
     } catch (error) {
       console.error("Error in forgot password:", error);
@@ -158,34 +154,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Verify reset code
+  app.post('/api/auth/verify-reset-code', async (req, res) => {
+    try {
+      const { email, code } = req.body;
+      
+      if (!email || !code) {
+        return res.status(400).json({ message: "Email and verification code are required" });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      // Check if code matches and is not expired
+      if (user.passwordResetCode !== code) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+        return res.status(400).json({ message: "Verification code has expired. Please request a new one." });
+      }
+
+      res.json({ 
+        valid: true, 
+        email: user.email,
+        message: "Verification code is valid" 
+      });
+    } catch (error) {
+      console.error("Error verifying reset code:", error);
+      res.status(500).json({ message: "Failed to verify code" });
+    }
+  });
+
   // Password reset confirmation
   app.post('/api/auth/reset-password', async (req, res) => {
     try {
-      const { token, newPassword } = req.body;
+      const { email, code, newPassword } = req.body;
       
-      if (!token || !newPassword) {
-        return res.status(400).json({ message: "Token and new password are required" });
+      if (!email || !code || !newPassword) {
+        return res.status(400).json({ message: "Email, verification code, and new password are required" });
       }
 
       if (newPassword.length < 6) {
         return res.status(400).json({ message: "Password must be at least 6 characters long" });
       }
 
-      // Find user by reset token
-      const user = await storage.getUserByResetToken(token);
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
       if (!user) {
-        return res.status(400).json({ message: "Invalid or expired reset token" });
+        return res.status(400).json({ message: "Invalid verification code" });
       }
 
-      // Check if token is expired
+      // Check if code matches and is not expired
+      if (user.passwordResetCode !== code) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
       if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
-        return res.status(400).json({ message: "Reset token has expired" });
+        return res.status(400).json({ message: "Verification code has expired. Please request a new one." });
       }
 
       // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      // Update password and clear reset token
+      // Update password and clear reset code
       await storage.updateUserPassword(user.id, hashedPassword);
 
       res.json({ message: "Password has been reset successfully" });

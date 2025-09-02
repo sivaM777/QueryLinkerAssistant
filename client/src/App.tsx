@@ -22,6 +22,7 @@ import SlackCommands from "@/pages/SlackCommands";
 import SlackInterface from "@/pages/SlackInterface";
 import NotionWorkspace from "@/pages/NotionWorkspace";
 import ForgotPassword from "@/pages/ForgotPassword";
+import VerifyResetCode from "@/pages/VerifyResetCode";
 import ResetPassword from "@/pages/ResetPassword";
 import Sidebar from "@/components/Layout/Sidebar";
 import Header from "@/components/Layout/Header";
@@ -46,13 +47,13 @@ function Router() {
 
   // Redirect to landing if not authenticated and trying to access protected routes
   useEffect(() => {
-    if (!isAuthenticated && location !== "/login" && location !== "/landing" && location !== "/" && location !== "/forgot-password" && !location.startsWith("/reset-password")) {
+    if (!isAuthenticated && location !== "/login" && location !== "/landing" && location !== "/" && location !== "/forgot-password" && location !== "/verify-reset-code" && !location.startsWith("/reset-password")) {
       setLocation("/landing");
     }
   }, [isAuthenticated, location, setLocation]);
 
   // Check if current route should show the dashboard layout
-  const isDashboardRoute = location !== "/landing" && location !== "/login" && location !== "/forgot-password" && !location.startsWith("/reset-password") && isAuthenticated;
+  const isDashboardRoute = location !== "/landing" && location !== "/login" && location !== "/forgot-password" && location !== "/verify-reset-code" && !location.startsWith("/reset-password") && isAuthenticated;
 
   if (!isDashboardRoute) {
     // Render landing or login page without dashboard layout
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/landing" component={Landing} />
         <Route path="/login" component={Login} />
         <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/verify-reset-code" component={VerifyResetCode} />
         <Route path="/reset-password" component={ResetPassword} />
       </Switch>
     );

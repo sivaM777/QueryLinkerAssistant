@@ -37,7 +37,7 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").notNull().default('user'),
   emailVerified: boolean("email_verified").default(false),
-  passwordResetToken: varchar("password_reset_token"),
+  passwordResetCode: varchar("password_reset_code", { length: 6 }),
   passwordResetExpires: timestamp("password_reset_expires"),
   lastLoginAt: timestamp("last_login_at"),
   authProvider: varchar("auth_provider").default('email'), // email, google, apple, replit
