@@ -11,12 +11,12 @@
         "profileImageUrl": null,
         "role": "user",
         "emailVerified": false,
-        "passwordResetToken": "b6e91bf98fe06c9cada742cf07113e1049552040b39f0d311d7c3316cb217124",
-        "passwordResetExpires": "2025-09-02T13:29:30.233Z",
+        "passwordResetToken": "857830c4260354ecd26d41778cad87d4b176a54c06573cfc2ec5524493373ef1",
+        "passwordResetExpires": "2025-09-02T13:41:07.678Z",
         "lastLoginAt": "2025-09-02T11:54:22.482Z",
         "authProvider": "email",
         "createdAt": "2025-08-24T11:04:35.064Z",
-        "updatedAt": "2025-09-02T12:29:30.233Z"
+        "updatedAt": "2025-09-02T12:41:07.678Z"
       }
     ],
     [
@@ -49,12 +49,12 @@
         "profileImageUrl": null,
         "role": "user",
         "emailVerified": false,
-        "passwordResetToken": null,
-        "passwordResetExpires": null,
+        "passwordResetToken": "744b369334b39ebb11859701d3776d3be74b20449fc56e6b85cbba9bed26e82a",
+        "passwordResetExpires": "2025-09-02T13:40:09.950Z",
         "lastLoginAt": "2025-08-31T08:48:27.373Z",
         "authProvider": "email",
         "createdAt": "2025-08-31T08:48:24.192Z",
-        "updatedAt": "2025-08-31T08:48:27.373Z"
+        "updatedAt": "2025-09-02T12:40:09.950Z"
       }
     ],
     [
