@@ -13,11 +13,38 @@ class EmailService {
   private isConfigured: boolean;
 
   constructor() {
-    // Always use development mode for reliable operation
-    // Gmail authentication is complex and often fails due to security settings
-    this.isConfigured = false;
-    this.transporter = null;
-    console.log('🔧 Email service running in development mode - Reset links logged to console');
+    // Check if Gmail SMTP configuration is available
+    this.isConfigured = !!(
+      process.env.GMAIL_USER && 
+      process.env.GMAIL_PASS
+    );
+
+    if (this.isConfigured) {
+      // Try multiple Gmail configurations for better compatibility
+      const gmailConfig = {
+        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_PASS?.replace(/\s+/g, ''), // Remove all whitespace
+        },
+        tls: {
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3'
+        },
+        requireTLS: true,
+        debug: true,
+        logger: true
+      };
+
+      this.transporter = nodemailer.createTransport(gmailConfig);
+      console.log('📧 Gmail SMTP configured with user:', process.env.GMAIL_USER);
+    } else {
+      this.transporter = null;
+      console.log('🔧 Email service running in development mode - Gmail SMTP not configured');
+    }
   }
 
   generateResetToken(): string {
@@ -26,26 +53,32 @@ class EmailService {
 
   async sendPasswordResetEmail(data: ResetEmailData): Promise<boolean> {
     try {
-      // Development mode - log reset details for easy testing
-      console.log('🔧 Development Mode - Password Reset Email');
-      console.log('To:', data.to);
-      console.log('Reset URL:', data.resetUrl);
-      console.log('Reset Token:', data.resetToken);
-      console.log('📧 Copy the Reset URL above to test password reset functionality');
-      console.log('================================================================================');
-      return true; // Return success for development
-
-      // Try to verify connection first
-      try {
-        await this.transporter.verify();
-        console.log('Gmail SMTP connection verified successfully');
-      } catch (verifyError) {
-        console.error('Gmail SMTP verification failed, falling back to development mode:', verifyError);
-        console.log('🔧 Development Mode - Password Reset Email (Gmail Auth Failed)');
+      // If Gmail SMTP is not configured, use development mode
+      if (!this.isConfigured || !this.transporter) {
+        console.log('🔧 Development Mode - Password Reset Email (No SMTP config)');
         console.log('To:', data.to);
         console.log('Reset URL:', data.resetUrl);
         console.log('Reset Token:', data.resetToken);
-        console.log('📧 Gmail credentials may need to be updated');
+        console.log('📧 Copy the Reset URL above to test password reset functionality');
+        console.log('================================================================================');
+        return true; // Return success for development
+      }
+
+      // Try to send actual Gmail
+      console.log('📧 Attempting to send Gmail...');
+      
+      // Verify connection first
+      try {
+        await this.transporter.verify();
+        console.log('✅ Gmail SMTP connection verified successfully');
+      } catch (verifyError) {
+        console.error('❌ Gmail SMTP verification failed:', verifyError);
+        console.log('🔧 Falling back to development mode');
+        console.log('To:', data.to);
+        console.log('Reset URL:', data.resetUrl);
+        console.log('Reset Token:', data.resetToken);
+        console.log('📧 Gmail credentials may need to be updated - check account settings');
+        console.log('================================================================================');
         return true; // Return success for development fallback
       }
 
