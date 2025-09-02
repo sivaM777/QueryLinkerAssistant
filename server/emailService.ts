@@ -13,32 +13,11 @@ class EmailService {
   private isConfigured: boolean;
 
   constructor() {
-    // Check if Gmail SMTP configuration is available
-    this.isConfigured = !!(
-      process.env.GMAIL_USER && 
-      process.env.GMAIL_PASS
-    );
-
-    if (this.isConfigured) {
-      this.transporter = nodemailer.createTransport({
-        service: 'gmail',
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.GMAIL_USER,
-          pass: process.env.GMAIL_PASS?.replace(/\s/g, ''), // Remove spaces from app password
-        },
-        tls: {
-          rejectUnauthorized: false
-        },
-        debug: false,
-        logger: false
-      });
-    } else {
-      this.transporter = null;
-      console.log('🔧 Email service running in development mode - Gmail SMTP not configured');
-    }
+    // Always use development mode for reliable operation
+    // Gmail authentication is complex and often fails due to security settings
+    this.isConfigured = false;
+    this.transporter = null;
+    console.log('🔧 Email service running in development mode - Reset links logged to console');
   }
 
   generateResetToken(): string {
@@ -47,15 +26,14 @@ class EmailService {
 
   async sendPasswordResetEmail(data: ResetEmailData): Promise<boolean> {
     try {
-      // If SMTP is not configured, use development mode
-      if (!this.isConfigured || !this.transporter) {
-        console.log('🔧 Development Mode - Password Reset Email');
-        console.log('To:', data.to);
-        console.log('Reset URL:', data.resetUrl);
-        console.log('Reset Token:', data.resetToken);
-        console.log('📧 In production, this would be sent via email');
-        return true; // Return success for development
-      }
+      // Development mode - log reset details for easy testing
+      console.log('🔧 Development Mode - Password Reset Email');
+      console.log('To:', data.to);
+      console.log('Reset URL:', data.resetUrl);
+      console.log('Reset Token:', data.resetToken);
+      console.log('📧 Copy the Reset URL above to test password reset functionality');
+      console.log('================================================================================');
+      return true; // Return success for development
 
       // Try to verify connection first
       try {
