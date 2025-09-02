@@ -13,21 +13,21 @@ class EmailService {
   private isConfigured: boolean;
 
   constructor() {
-    // Check if SMTP configuration is available
+    // Check if Gmail SMTP configuration is available
     this.isConfigured = !!(
-      process.env.SMTP_HOST && 
-      process.env.SMTP_USER && 
-      process.env.SMTP_PASS
+      process.env.GMAIL_USER && 
+      process.env.GMAIL_PASS
     );
 
     if (this.isConfigured) {
       this.transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '587'),
+        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
         secure: false, // true for 465, false for other ports
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_PASS,
         },
         tls: {
           rejectUnauthorized: false
@@ -35,7 +35,7 @@ class EmailService {
       });
     } else {
       this.transporter = null;
-      console.log('🔧 Email service running in development mode - SMTP not configured');
+      console.log('🔧 Email service running in development mode - Gmail SMTP not configured');
     }
   }
 
@@ -60,7 +60,7 @@ class EmailService {
       const mailOptions = {
         from: {
           name: 'QueryLinker',
-          address: process.env.SMTP_USER!
+          address: process.env.GMAIL_USER!
         },
         to: data.to,
         subject: 'Password Reset Request - QueryLinker',
@@ -230,15 +230,15 @@ If you need assistance, please contact our support team.
   async verifyConnection(): Promise<boolean> {
     try {
       if (!this.isConfigured || !this.transporter) {
-        console.log('🔧 Development mode: SMTP verification skipped');
+        console.log('🔧 Development mode: Gmail SMTP verification skipped');
         return true;
       }
       
       await this.transporter.verify();
-      console.log('SMTP connection verified successfully');
+      console.log('Gmail SMTP connection verified successfully');
       return true;
     } catch (error) {
-      console.error('SMTP connection failed:', error);
+      console.error('Gmail SMTP connection failed:', error);
       return false;
     }
   }
